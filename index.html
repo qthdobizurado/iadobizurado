@@ -210,12 +210,13 @@
 
         let state = {
             currentSubject: null,
+            isLoading: false, // ✅ Nova flag explícita de carregamento
             documents: [],
             allChunks: [],
             messages: [],
             isProcessing: false,
             lastSources: [],
-            subjectsData: {}, // ✅ Armazena os assuntos globalmente
+            subjectsData: {},
             settings: { apiKey: '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' }
         };
 
@@ -271,7 +272,8 @@
         }
 
         async function selectSubject(name, el) {
-            if (state.isProcessing) return;
+            if (state.isProcessing || state.isLoading) return;
+            
             document.querySelectorAll('.subject-item').forEach(e => e.classList.remove('active'));
             if (el) el.classList.add('active');
             
@@ -280,27 +282,55 @@
             state.allChunks = []; 
             state.messages = [];
             state.lastSources = [];
+            state.isLoading = true; // ✅ Bloqueia interação durante carregamento
+            
             document.getElementById('messagesContainer').innerHTML = '';
             document.getElementById('welcomeScreen').style.display = 'flex';
             updateStats(); 
             updateGlobalStatus();
 
             showLoading(`Carregando "${name}"...`);
-            const pdfFolder = `pdf/${encodeURIComponent(name)}/`;
+            
             const files = state.subjectsData[name] || [];
+            if (files.length === 0) {
+                hideLoading();
+                state.isLoading = false;
+                showToast(`Nenhum PDF encontrado para "${name}".`, 'warning');
+                return;
+            }
 
+            // Usa nome exato da pasta (Netlify/GitHub Pages lidam com espaços automaticamente)
+            const pdfFolder = `pdf/${name}/`;
             let loaded = 0;
+
             for (let i = 0; i < files.length; i++) {
                 showLoading(`Processando ${i+1}/${files.length}: ${files[i]}`);
+                // Pequeno delay para permitir atualização visual do DOM
+                await new Promise(r => setTimeout(r, 50)); 
+                
                 try {
                     const response = await fetch(pdfFolder + files[i]);
-                    if (response.ok && await loadPDFFromBlob(await response.blob(), files[i])) loaded++;
-                } catch(e) { console.warn(`⚠️ Falha: ${files[i]}`, e); }
+                    if (response.ok) {
+                        const success = await loadPDFFromBlob(await response.blob(), files[i]);
+                        if (success) loaded++;
+                    } else {
+                        console.warn(`❌ Falha ao baixar ${files[i]}: HTTP ${response.status}`);
+                    }
+                } catch(e) { 
+                    console.error(`⚠️ Erro ao processar ${files[i]}:`, e); 
+                }
             }
+
             hideLoading(); 
+            state.isLoading = false;
             updateGlobalStatus();
-            document.getElementById('welcomeScreen').style.display = loaded > 0 ? 'none' : 'flex';
-            showToast(`✅ "${name}" carregado (${loaded} PDFs)`, loaded > 0 ? 'success' : 'error');
+            
+            if (loaded > 0) {
+                document.getElementById('welcomeScreen').style.display = 'none';
+                showToast(`✅ "${name}" carregado: ${loaded} PDF(s) pronto(s).`, 'success');
+            } else {
+                showToast(`⚠️ Falha ao carregar PDFs. Abra o console (F12) para ver detalhes.`, 'error');
+            }
         }
 
         async function loadPDFFromBlob(inputData, name) {
@@ -317,7 +347,10 @@
                 state.documents.push({ id: docId, name, text: fullText, chunks, pages: pdf.numPages, wordCount: fullText.split(/\s+/).length });
                 state.allChunks.push(...chunks.map(c => ({ ...c, docId, docName: name })));
                 updateStats(); return true;
-            } catch (e) { showToast(`Erro em ${name}: ${e.message}`, 'error'); return false; }
+            } catch (e) { 
+                console.error(`❌ loadPDFFromBlob falhou em ${name}:`, e); 
+                return false; 
+            }
         }
 
         function chunkText(text, docName, chunkSize = 350, overlap = 80) {
@@ -356,30 +389,21 @@
                 if (idx > 0) expanded.add(dc[idx-1].text);
                 if (idx < dc.length-1) expanded.add(dc[idx+1].text);
             }
-            
             let context = Array.from(expanded).join('\n\n---\n\n');
-            // ✅ Limitador de tamanho para evitar Erro 413 (Payload Too Large)
             const MAX_CHARS = 20000; 
-            if (context.length > MAX_CHARS) {
-                context = context.substring(0, MAX_CHARS) + '\n\n...[Contexto otimizado para caber no limite da API]';
-            }
+            if (context.length > MAX_CHARS) context = context.substring(0, MAX_CHARS) + '\n\n...[Contexto otimizado]';
             return { context, sources: rel };
         }
 
         async function callLLM(messages) {
             const { apiKey } = state.settings;
             if (!apiKey?.startsWith('gsk_')) throw new Error('API Key inválida.');
-            
             const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST', 
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.2, max_tokens: 1500 })
             });
-            
-            if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(`Groq (${res.status})${res.status === 413 ? ': Contexto muito grande. Tente perguntas mais específicas.' : ''}`);
-            }
+            if (!res.ok) throw new Error(`Groq (${res.status})`);
             return (await res.json()).choices[0].message.content;
         }
 
@@ -387,8 +411,11 @@
             const input = document.getElementById('chatInput');
             const msg = input.value.trim();
             if (!msg || state.isProcessing) return;
+            
+            // ✅ Verificações corrigidas
+            if (state.isLoading) return showToast('Aguarde terminar de carregar os PDFs...', 'warning');
             if (!state.currentSubject) return showToast('Selecione um assunto primeiro.', 'warning');
-            if (state.documents.length === 0) return showToast('Aguarde o carregamento dos documentos.', 'warning');
+            if (state.documents.length === 0) return showToast('Nenhum documento carregado. Tente outro assunto.', 'error');
 
             input.value = ''; autoResize(input);
             document.getElementById('welcomeScreen').style.display = 'none';
@@ -453,8 +480,9 @@ CONTEXTO (${state.currentSubject}):\n${context}`;
         }
         function updateGlobalStatus(){
             const st=document.getElementById('globalStatus');
-            if(!state.currentSubject){st.className='status-badge idle';st.innerHTML='<span style="width:6px;height:6px;background:var(--text-muted);border-radius:50%;display:inline-block;"></span> Selecione um assunto';}
-            else if(!state.documents.length){st.className='status-badge processing';st.innerHTML='<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Carregando...';}
+            if(state.isLoading){st.className='status-badge processing';st.innerHTML='<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Carregando...';}
+            else if(!state.currentSubject){st.className='status-badge idle';st.innerHTML='<span style="width:6px;height:6px;background:var(--text-muted);border-radius:50%;display:inline-block;"></span> Selecione um assunto';}
+            else if(state.documents.length===0){st.className='status-badge error';st.innerHTML='<span style="width:6px;height:6px;background:var(--danger);border-radius:50%;display:inline-block;"></span> Falha no carregamento';}
             else{st.className='status-badge ready';st.innerHTML=`<span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;"></span> 📚 ${state.currentSubject}`;}
         }
         function toggleSourcePanel(){
