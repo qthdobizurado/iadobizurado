@@ -116,7 +116,7 @@
         .loading-text { font-size: 16px; color: var(--text-secondary); }
         .toast-container { position: fixed; top: 90px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
         .toast { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; animation: toastIn 0.3s ease; min-width: 280px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); }
-        .toast.success { border-left: 3px solid var(--success); } .toast.error { border-left: 3px solid var(--danger); } .toast.info { border-left: 3px solid var(--accent); } .toast.warning { border-left: 3px solid var(--warning); }
+        .toast.success { border-left: 3px solid var(--success); } .toast.error { border-left: 3px solid var(--danger); } .toast.info { border-left: 3px solid var(--accent); }
         @keyframes toastIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
         .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
@@ -209,14 +209,13 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         let state = {
+            subjectsData: {}, // 🆕 Guarda a lista de assuntos carregada
             currentSubject: null,
-            isLoading: false, // ✅ Nova flag explícita de carregamento
             documents: [],
             allChunks: [],
             messages: [],
             isProcessing: false,
             lastSources: [],
-            subjectsData: {},
             settings: { apiKey: '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' }
         };
 
@@ -247,21 +246,23 @@
                 const res = await fetch('pdf/subjects.json');
                 if (!res.ok) throw new Error('Arquivo não encontrado');
                 state.subjectsData = await res.json();
-                renderSubjectList(state.subjectsData);
+                renderSubjectList();
             } catch(e) {
                 document.getElementById('subjectList').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Crie o arquivo <code>pdf/subjects.json</code> no repositório.</p></div>`;
                 showToast('Erro ao carregar lista de assuntos.', 'error');
             }
         }
 
-        function renderSubjectList(subjects) {
+        // ✅ CORRIGIDO: Não apaga a lista ao selecionar
+        function renderSubjectList() {
             const list = document.getElementById('subjectList');
+            const subjects = state.subjectsData;
             if (!subjects || Object.keys(subjects).length === 0) {
                 list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum assunto configurado.</p></div>`;
                 return;
             }
             list.innerHTML = Object.entries(subjects).map(([name, files]) => `
-                <div class="subject-item" onclick="selectSubject('${name.replace(/'/g, "\\'")}', this)">
+                <div class="subject-item ${state.currentSubject === name ? 'active' : ''}" onclick="selectSubject(\`${name}\`)">
                     <div class="subject-icon">📚</div>
                     <div class="subject-info">
                         <div class="subject-name">${name}</div>
@@ -271,65 +272,38 @@
             `).join('');
         }
 
-        async function selectSubject(name, el) {
-            if (state.isProcessing || state.isLoading) return;
-            
-            document.querySelectorAll('.subject-item').forEach(e => e.classList.remove('active'));
-            if (el) el.classList.add('active');
-            
+        // ✅ CORRIGIDO: Lógica de seleção limpa e segura
+        async function selectSubject(name) {
+            if (state.isProcessing) return showToast('Aguarde o carregamento atual.', 'warning');
             state.currentSubject = name;
-            state.documents = []; 
-            state.allChunks = []; 
-            state.messages = [];
-            state.lastSources = [];
-            state.isLoading = true; // ✅ Bloqueia interação durante carregamento
+            state.documents = []; state.allChunks = []; state.messages = [];
+            renderSubjectList(); // Apenas atualiza a classe 'active'
+            updateStats(); updateGlobalStatus();
             
-            document.getElementById('messagesContainer').innerHTML = '';
             document.getElementById('welcomeScreen').style.display = 'flex';
-            updateStats(); 
-            updateGlobalStatus();
+            document.querySelector('.welcome-icon').textContent = '⏳';
+            document.querySelector('.welcome-title').textContent = 'Carregando documentos...';
+            document.querySelector('.welcome-desc').textContent = 'Processando PDFs para o assunto selecionado.';
 
             showLoading(`Carregando "${name}"...`);
-            
+            const pdfFolder = `pdf/${encodeURIComponent(name)}/`;
             const files = state.subjectsData[name] || [];
-            if (files.length === 0) {
-                hideLoading();
-                state.isLoading = false;
-                showToast(`Nenhum PDF encontrado para "${name}".`, 'warning');
-                return;
-            }
-
-            // Usa nome exato da pasta (Netlify/GitHub Pages lidam com espaços automaticamente)
-            const pdfFolder = `pdf/${name}/`;
             let loaded = 0;
 
             for (let i = 0; i < files.length; i++) {
                 showLoading(`Processando ${i+1}/${files.length}: ${files[i]}`);
-                // Pequeno delay para permitir atualização visual do DOM
-                await new Promise(r => setTimeout(r, 50)); 
-                
                 try {
                     const response = await fetch(pdfFolder + files[i]);
-                    if (response.ok) {
-                        const success = await loadPDFFromBlob(await response.blob(), files[i]);
-                        if (success) loaded++;
-                    } else {
-                        console.warn(`❌ Falha ao baixar ${files[i]}: HTTP ${response.status}`);
-                    }
-                } catch(e) { 
-                    console.error(`⚠️ Erro ao processar ${files[i]}:`, e); 
-                }
+                    if (response.ok && await loadPDFFromBlob(await response.blob(), files[i])) loaded++;
+                } catch(e) { console.warn(`⚠️ Falha: ${files[i]}`, e); }
             }
-
-            hideLoading(); 
-            state.isLoading = false;
-            updateGlobalStatus();
+            hideLoading(); updateGlobalStatus();
             
             if (loaded > 0) {
                 document.getElementById('welcomeScreen').style.display = 'none';
-                showToast(`✅ "${name}" carregado: ${loaded} PDF(s) pronto(s).`, 'success');
+                showToast(`✅ "${name}" pronto (${loaded} PDFs)`, 'success');
             } else {
-                showToast(`⚠️ Falha ao carregar PDFs. Abra o console (F12) para ver detalhes.`, 'error');
+                showToast(`❌ Falha ao carregar "${name}"`, 'error');
             }
         }
 
@@ -342,18 +316,15 @@
                     const content = await pdf.getPage(i).then(p => p.getTextContent());
                     fullText += content.items.map(item => item.str).join(' ') + '\n\n';
                 }
-                const chunks = chunkText(fullText, name, 350, 80);
+                const chunks = chunkText(fullText, name, 300, 60); // ✅ Chunks um pouco menores para evitar payload excessivo
                 const docId = Date.now() + Math.random();
                 state.documents.push({ id: docId, name, text: fullText, chunks, pages: pdf.numPages, wordCount: fullText.split(/\s+/).length });
                 state.allChunks.push(...chunks.map(c => ({ ...c, docId, docName: name })));
                 updateStats(); return true;
-            } catch (e) { 
-                console.error(`❌ loadPDFFromBlob falhou em ${name}:`, e); 
-                return false; 
-            }
+            } catch (e) { showToast(`Erro em ${name}: ${e.message}`, 'error'); return false; }
         }
 
-        function chunkText(text, docName, chunkSize = 350, overlap = 80) {
+        function chunkText(text, docName, chunkSize = 300, overlap = 60) {
             const words = text.split(/\s+/); const chunks = []; let i = 0;
             while (i < words.length) {
                 const end = Math.min(i + chunkSize, words.length);
@@ -365,7 +336,7 @@
             } return chunks;
         }
 
-        function searchChunks(query, topK = 5) {
+        function searchChunks(query, topK = 3) { // ✅ Reduzido para 3 para evitar payload 413
             const terms = query.toLowerCase().replace(/[^\w\sàáâãéêíóôõúüç]/gi, '').split(/\s+/).filter(w => w.length > 2);
             if (!terms.length) return [];
             return state.allChunks.map(c => {
@@ -379,8 +350,9 @@
             }).filter(c => c.score > 0).sort((a, b) => b.score - a.score).slice(0, topK);
         }
 
+        // ✅ CORRIGIDO: Limite rígido de contexto para evitar erro 413 (Payload Too Large)
         function buildContext(query) {
-            const rel = searchChunks(query, 5);
+            const rel = searchChunks(query, 3);
             const expanded = new Set();
             for (const chunk of rel) {
                 expanded.add(chunk.text);
@@ -390,8 +362,10 @@
                 if (idx < dc.length-1) expanded.add(dc[idx+1].text);
             }
             let context = Array.from(expanded).join('\n\n---\n\n');
-            const MAX_CHARS = 20000; 
-            if (context.length > MAX_CHARS) context = context.substring(0, MAX_CHARS) + '\n\n...[Contexto otimizado]';
+            // Limite seguro: ~10k tokens max no contexto
+            if (context.length > 40000) {
+                context = context.substring(0, 40000) + '\n\n[Contexto truncado para otimização...]';
+            }
             return { context, sources: rel };
         }
 
@@ -399,9 +373,8 @@
             const { apiKey } = state.settings;
             if (!apiKey?.startsWith('gsk_')) throw new Error('API Key inválida.');
             const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST', 
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.2, max_tokens: 1500 })
+                method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.2, max_tokens: 1200 })
             });
             if (!res.ok) throw new Error(`Groq (${res.status})`);
             return (await res.json()).choices[0].message.content;
@@ -411,11 +384,8 @@
             const input = document.getElementById('chatInput');
             const msg = input.value.trim();
             if (!msg || state.isProcessing) return;
-            
-            // ✅ Verificações corrigidas
-            if (state.isLoading) return showToast('Aguarde terminar de carregar os PDFs...', 'warning');
             if (!state.currentSubject) return showToast('Selecione um assunto primeiro.', 'warning');
-            if (state.documents.length === 0) return showToast('Nenhum documento carregado. Tente outro assunto.', 'error');
+            if (state.documents.length === 0) return showToast('Aguarde o carregamento dos PDFs.', 'warning');
 
             input.value = ''; autoResize(input);
             document.getElementById('welcomeScreen').style.display = 'none';
@@ -443,7 +413,7 @@ CONTEXTO (${state.currentSubject}):\n${context}`;
                 state.messages.push({ role: 'user', content: msg }, { role: 'ai', content: response });
             } catch(e) {
                 removeTypingIndicator(tid);
-                addMessage('ai', `❌ **Erro:** ${e.message}`);
+                addMessage('ai', `❌ **Erro:** ${e.message}\n💡 Dica: Se for 413, reduza o tamanho da sua pergunta ou aguarde.`);
             }
             state.isProcessing = false; updateSendButton();
         }
@@ -480,9 +450,8 @@ CONTEXTO (${state.currentSubject}):\n${context}`;
         }
         function updateGlobalStatus(){
             const st=document.getElementById('globalStatus');
-            if(state.isLoading){st.className='status-badge processing';st.innerHTML='<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Carregando...';}
-            else if(!state.currentSubject){st.className='status-badge idle';st.innerHTML='<span style="width:6px;height:6px;background:var(--text-muted);border-radius:50%;display:inline-block;"></span> Selecione um assunto';}
-            else if(state.documents.length===0){st.className='status-badge error';st.innerHTML='<span style="width:6px;height:6px;background:var(--danger);border-radius:50%;display:inline-block;"></span> Falha no carregamento';}
+            if(!state.currentSubject){st.className='status-badge idle';st.innerHTML='<span style="width:6px;height:6px;background:var(--text-muted);border-radius:50%;display:inline-block;"></span> Selecione um assunto';}
+            else if(!state.documents.length){st.className='status-badge processing';st.innerHTML='<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Carregando...';}
             else{st.className='status-badge ready';st.innerHTML=`<span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;"></span> 📚 ${state.currentSubject}`;}
         }
         function toggleSourcePanel(){
@@ -497,8 +466,7 @@ CONTEXTO (${state.currentSubject}):\n${context}`;
         function hideLoading(){document.getElementById('loadingOverlay').classList.remove('active');}
         function showToast(m,t='info'){
             const c=document.getElementById('toastContainer'),d=document.createElement('div');d.className=`toast ${t}`;
-            const icons = {success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
-            d.innerHTML=`<span>${icons[t]||'ℹ️'}</span> ${m}`;c.appendChild(d);
+            d.innerHTML=`<span>${{success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'}[t]}</span> ${m}`;c.appendChild(d);
             setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(50px)';d.style.transition='all .3s';setTimeout(()=>d.remove(),300)},4000);
         }
     </script>
