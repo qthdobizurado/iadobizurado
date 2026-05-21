@@ -306,55 +306,55 @@
         }
 
         async function loadAllPDFs() {
-            const pdfFolder = 'pdf/';
-            showLoading('Tentando carregar da pasta /pdf/...');
-            
-            let autoLoaded = 0;
-            let useManualFallback = false;
+    const pdfFolder = 'pdf/';
+    let pdfList = [];
 
-            try {
-                // Tenta listar diretório (funciona em servidores com listing habilitado)
-                const response = await fetch(pdfFolder);
-                if (response.ok) {
-                    const html = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const links = Array.from(doc.querySelectorAll('a'))
-                        .map(a => a.getAttribute('href'))
-                        .filter(h => h && h.toLowerCase().endsWith('.pdf'));
+    showLoading('Verificando lista de documentos...');
 
-                    if (links.length === 0) useManualFallback = true;
-
-                    for (let i = 0; i < links.length; i++) {
-                        const href = links[i];
-                        showLoading(`Carregando ${i+1}/${links.length}: ${href}`);
-                        try {
-                            const pdfResponse = await fetch(pdfFolder + href);
-                            if (pdfResponse.ok) {
-                                if (await loadPDFFromBlob(await pdfResponse.blob(), href)) autoLoaded++;
-                            }
-                        } catch (e) { console.warn(`Falha ao baixar ${href}`, e); }
-                    }
-                } else {
-                    useManualFallback = true;
-                }
-            } catch (e) {
-                useManualFallback = true;
-            }
-
-            hideLoading();
-
-            if (autoLoaded > 0) {
-                showToast(`${autoLoaded} PDF(s) carregado(s) automaticamente!`, 'success');
-            } else if (useManualFallback) {
-                showToast('Não foi possível listar a pasta automaticamente. Selecione os arquivos.', 'info');
-                openFilePicker();
-            } else {
-                showToast('Nenhum PDF novo encontrado na pasta.', 'info');
-            }
-            updateGlobalStatus();
+    // Tenta carregar lista explícita (funciona em HTTP/HTTPS estático)
+    try {
+        const res = await fetch(pdfFolder + 'pdf-list.json');
+        if (res.ok) {
+            pdfList = await res.json();
+            if (!Array.isArray(pdfList)) pdfList = [];
         }
+    } catch(e) { /* lista não existe ou erro de rede */ }
 
+    // Fallback se não houver lista
+    if (pdfList.length === 0) {
+        hideLoading();
+        showToast('Nenhuma lista de PDFs encontrada. Selecione os arquivos manualmente.', 'info');
+        openFilePicker();
+        return;
+    }
+
+    // Carrega um por um com progresso
+    let loaded = 0;
+    for (let i = 0; i < pdfList.length; i++) {
+        const filename = pdfList[i].trim();
+        if (!filename.toLowerCase().endsWith('.pdf')) continue;
+        
+        showLoading(`Carregando ${i+1}/${pdfList.length}: ${filename}`);
+        try {
+            const response = await fetch(pdfFolder + filename);
+            if (response.ok) {
+                if (await loadPDFFromBlob(await response.blob(), filename)) {
+                    loaded++;
+                }
+            }
+        } catch(e) { 
+            console.warn(`⚠️ Falha ao baixar ${filename}:`, e); 
+        }
+    }
+
+    hideLoading();
+    updateGlobalStatus();
+    if (loaded > 0) {
+        showToast(`✅ ${loaded}/${pdfList.length} PDF(s) carregado(s) com sucesso!`, 'success');
+    } else {
+        showToast('❌ Nenhum PDF foi carregado. Verifique os nomes no pdf-list.json', 'error');
+    }
+}
         function openFilePicker() {
             const input = document.createElement('input');
             input.type = 'file'; input.accept = '.pdf'; input.multiple = true;
