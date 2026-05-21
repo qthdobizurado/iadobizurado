@@ -1,729 +1,838 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NotebookAI - Assuntos</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        :root {
-            --bg-primary: #0a0a0f; --bg-secondary: #12121a; --bg-tertiary: #1a1a2e; --bg-card: #16162a;
-            --accent: #7c5cfc; --accent-hover: #9478ff; --accent-glow: rgba(124, 92, 252, 0.3);
-            --text-primary: #e8e8f0; --text-secondary: #9898b0; --text-muted: #5a5a78; --border: #2a2a40;
-            --success: #34d399; --warning: #fbbf24; --danger: #f87171; --gradient-1: linear-gradient(135deg, #7c5cfc, #4f8cff);
-            --gradient-2: linear-gradient(135deg, #7c5cfc, #c084fc);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
-        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 20% 20%, rgba(124, 92, 252, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(79, 140, 252, 0.06) 0%, transparent 50%); pointer-events: none; z-index: 0; }
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        .header { position: sticky; top: 0; z-index: 100; background: rgba(10, 10, 15, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
-        .logo { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { width: 40px; height: 40px; background: var(--gradient-1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 15px var(--accent-glow); }
-        .logo-text { font-size: 22px; font-weight: 700; background: var(--gradient-2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header-actions { display: flex; align-items: center; gap: 12px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 10px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-primary { background: var(--gradient-1); color: white; box-shadow: 0 4px 15px var(--accent-glow); }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 25px var(--accent-glow); }
-        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
-        .btn-secondary:hover { border-color: var(--accent); background: rgba(124, 92, 252, 0.1); }
-        .btn-ghost { background: transparent; color: var(--text-secondary); padding: 8px 12px; }
-        .main-container { display: flex; height: calc(100vh - 73px); position: relative; z-index: 1; }
-        .sidebar { width: 320px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
-        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
-        .sidebar-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-        .stats-bar { display: flex; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
-        .stat-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
-        .stat-value { color: var(--text-secondary); font-weight: 600; }
-        .subject-list { flex: 1; overflow-y: auto; padding: 12px; }
-        .subject-item { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; margin-bottom: 6px; border: 1px solid transparent; }
-        .subject-item:hover { background: var(--bg-tertiary); border-color: var(--border); }
-        .subject-item.active { background: rgba(124, 92, 252, 0.1); border-color: var(--accent); }
-        .subject-item.loading-item { opacity: 0.6; pointer-events: none; }
-        .subject-icon { width: 42px; height: 42px; background: var(--gradient-2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-        .subject-info { flex: 1; min-width: 0; }
-        .subject-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .subject-count { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-        .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
-        .welcome-icon { width: 80px; height: 80px; background: var(--gradient-2); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; box-shadow: 0 8px 30px var(--accent-glow); animation: float 3s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .welcome-title { font-size: 28px; font-weight: 700; margin-bottom: 12px; background: var(--gradient-2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .welcome-desc { font-size: 16px; color: var(--text-secondary); max-width: 500px; line-height: 1.6; margin-bottom: 32px; }
-        .messages-container { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
-        .message { display: flex; gap: 14px; max-width: 800px; animation: messageIn 0.4s ease; }
-        @keyframes messageIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .message.user { align-self: flex-end; flex-direction: row-reverse; }
-        .message-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-        .message.ai .message-avatar { background: var(--gradient-1); box-shadow: 0 2px 10px var(--accent-glow); }
-        .message.user .message-avatar { background: var(--bg-tertiary); border: 1px solid var(--border); }
-        .message-content { flex: 1; }
-        .message-bubble { padding: 16px 20px; border-radius: 16px; font-size: 14px; line-height: 1.7; }
-        .message.ai .message-bubble { background: var(--bg-card); border: 1px solid var(--border); border-top-left-radius: 4px; }
-        .message.user .message-bubble { background: var(--accent); color: white; border-top-right-radius: 4px; }
-        .message-bubble p { margin-bottom: 10px; } .message-bubble p:last-child { margin-bottom: 0; }
-        .message-bubble strong { color: var(--accent-hover); } .message.user .message-bubble strong { color: white; }
-        .message-bubble ul, .message-bubble ol { margin: 8px 0; padding-left: 20px; }
-        .message-bubble li { margin-bottom: 4px; }
-        .message-bubble code { background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-        .sources { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
-        .source-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--bg-tertiary); border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
-        .source-tag:hover { border-color: var(--accent); color: var(--accent); }
-        .typing-indicator { display: flex; gap: 5px; padding: 12px 16px; }
-        .typing-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: typing 1.4s ease-in-out infinite; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; } .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-8px); opacity: 1; } }
-        .input-area { padding: 20px 24px; border-top: 1px solid var(--border); background: rgba(18, 18, 26, 0.9); backdrop-filter: blur(10px); }
-        .input-wrapper { max-width: 800px; margin: 0 auto; display: flex; gap: 12px; align-items: flex-end; }
-        .input-box { flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; transition: all 0.3s ease; }
-        .input-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        .input-box textarea { flex: 1; background: none; border: none; color: var(--text-primary); font-family: inherit; font-size: 14px; resize: none; outline: none; max-height: 120px; line-height: 1.5; }
-        .input-box textarea::placeholder { color: var(--text-muted); }
-        .send-btn { width: 48px; height: 48px; background: var(--gradient-1); border: none; border-radius: 14px; color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 4px 15px var(--accent-glow); flex-shrink: 0; }
-        .send-btn:hover { transform: scale(1.05); } .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .input-hint { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 8px; }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-overlay.active { display: flex; }
-        .modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 500px; width: 90%; animation: modalIn 0.3s ease; }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-        .modal-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; }
-        .form-group { margin-bottom: 20px; }
-        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-input { width: 100%; padding: 12px 16px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; transition: all 0.3s; }
-        .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-        .form-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
-        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
-        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-        .status-badge.processing { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
-        .status-badge.ready { background: rgba(52, 211, 153, 0.15); color: var(--success); }
-        .status-badge.idle { background: rgba(90, 90, 120, 0.15); color: var(--text-muted); }
-        .source-panel { display: none; position: fixed; right: 0; top: 73px; bottom: 0; width: 400px; background: var(--bg-secondary); border-left: 1px solid var(--border); z-index: 50; animation: slideIn 0.3s ease; }
-        .source-panel.active { display: flex; flex-direction: column; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        .source-panel-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-        .source-panel-title { font-size: 16px; font-weight: 600; }
-        .source-panel-content { flex: 1; overflow-y: auto; padding: 20px; }
-        .source-chunk { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-        .source-chunk-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-        .source-chunk-source { font-size: 12px; font-weight: 600; color: var(--accent); }
-        .source-chunk-relevance { font-size: 11px; color: var(--text-muted); background: var(--bg-tertiary); padding: 2px 8px; border-radius: 10px; }
-        .source-chunk-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 15, 0.9); z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
-        .loading-overlay.active { display: flex; }
-        .loading-spinner { width: 50px; height: 50px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { font-size: 16px; color: var(--text-secondary); }
-        .toast-container { position: fixed; top: 90px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
-        .toast { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; animation: toastIn 0.3s ease; min-width: 280px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); }
-        .toast.success { border-left: 3px solid var(--success); } .toast.error { border-left: 3px solid var(--danger); } .toast.info { border-left: 3px solid var(--accent); }
-        @keyframes toastIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
-        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-        .empty-state p { font-size: 14px; }
-        .message-bubble h1, .message-bubble h2, .message-bubble h3 { margin: 16px 0 8px; color: var(--text-primary); }
-        .message-bubble h1 { font-size: 20px; } .message-bubble h2 { font-size: 17px; } .message-bubble h3 { font-size: 15px; }
-        .message-bubble blockquote { border-left: 3px solid var(--accent); padding-left: 14px; color: var(--text-secondary); margin: 10px 0; }
-        .message-bubble table { border-collapse: collapse; margin: 10px 0; width: 100%; }
-        .message-bubble th, .message-bubble td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; font-size: 13px; }
-        .message-bubble th { background: var(--bg-tertiary); font-weight: 600; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NotebookAI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+:root {
+  --bg0:#0a0a0f;--bg1:#12121a;--bg2:#1a1a2e;--bg3:#16162a;
+  --ac:#7c5cfc;--ach:#9478ff;--acg:rgba(124,92,252,0.25);
+  --t0:#e8e8f0;--t1:#9898b0;--t2:#5a5a78;--bd:#2a2a40;
+  --ok:#34d399;--warn:#fbbf24;--err:#f87171;
+  --g1:linear-gradient(135deg,#7c5cfc,#4f8cff);
+  --g2:linear-gradient(135deg,#7c5cfc,#c084fc);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t0);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(124,92,252,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(79,140,252,.06) 0%,transparent 50%);pointer-events:none;z-index:0}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(10,10,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:38px;height:38px;background:var(--g1);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 15px var(--acg)}
+.logo-text{font-size:21px;font-weight:700;background:var(--g2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.badge.idle{background:rgba(90,90,120,.15);color:var(--t2)}
+.badge.busy{background:rgba(251,191,36,.12);color:var(--warn)}
+.badge.ok{background:rgba(52,211,153,.12);color:var(--ok)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:7px}
+.btn-pri{background:var(--g1);color:#fff;box-shadow:0 4px 14px var(--acg)}
+.btn-pri:hover{transform:translateY(-1px);box-shadow:0 6px 22px var(--acg)}
+.btn-sec{background:var(--bg2);color:var(--t0);border:1px solid var(--bd)}
+.btn-sec:hover{border-color:var(--ac);background:rgba(124,92,252,.08)}
+.btn-ghost{background:transparent;color:var(--t1);padding:7px 11px}
+.btn-ghost:hover{color:var(--t0)}
+
+/* LAYOUT */
+.layout{display:flex;height:calc(100vh - 67px);position:relative;z-index:1}
+
+/* SIDEBAR */
+.sidebar{width:300px;background:var(--bg1);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
+.sb-head{padding:18px;border-bottom:1px solid var(--bd)}
+.sb-title{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-bottom:0}
+.sb-stats{display:flex;gap:12px;padding:10px 18px;border-bottom:1px solid var(--bd);font-size:11px;color:var(--t2)}
+.sb-stats span{color:var(--t1);font-weight:600}
+.sb-list{flex:1;overflow-y:auto;padding:10px}
+.sb-item{display:flex;align-items:center;gap:11px;padding:13px;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:5px;border:1px solid transparent}
+.sb-item:hover{background:var(--bg2);border-color:var(--bd)}
+.sb-item.active{background:rgba(124,92,252,.1);border-color:var(--ac)}
+.sb-item.busy-item{opacity:.55;pointer-events:none}
+.sb-icon{width:40px;height:40px;background:var(--g2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sb-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-sub{font-size:11px;color:var(--t2);margin-top:2px}
+
+/* CHAT */
+.chat{flex:1;display:flex;flex-direction:column;min-width:0}
+.msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:20px}
+
+/* WELCOME */
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center}
+.welcome-icon{width:76px;height:76px;background:var(--g2);border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:22px;box-shadow:0 8px 28px var(--acg);animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.welcome h1{font-size:26px;font-weight:700;margin-bottom:10px;background:var(--g2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.welcome p{font-size:15px;color:var(--t1);max-width:460px;line-height:1.6}
+
+/* MESSAGES */
+.msg{display:flex;gap:12px;max-width:820px;animation:msgIn .35s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.av{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.msg.ai .av{background:var(--g1);box-shadow:0 2px 9px var(--acg)}
+.msg.user .av{background:var(--bg2);border:1px solid var(--bd)}
+.msg-body{flex:1}
+.bubble{padding:14px 18px;border-radius:15px;font-size:14px;line-height:1.75}
+.msg.ai .bubble{background:var(--bg3);border:1px solid var(--bd);border-top-left-radius:3px}
+.msg.user .bubble{background:var(--ac);color:#fff;border-top-right-radius:3px}
+.bubble p{margin-bottom:9px}.bubble p:last-child{margin-bottom:0}
+.bubble strong{color:var(--ach)}.msg.user .bubble strong{color:#fff}
+.bubble ul,.bubble ol{margin:7px 0;padding-left:18px}.bubble li{margin-bottom:4px}
+.bubble h2,.bubble h3{margin:13px 0 6px;color:var(--t0)}.bubble h2{font-size:16px}.bubble h3{font-size:14px}
+.bubble code{background:var(--bg0);padding:2px 5px;border-radius:4px;font-size:12px}
+.bubble pre{background:var(--bg0);padding:12px;border-radius:8px;overflow-x:auto;margin:8px 0}
+.bubble blockquote{border-left:3px solid var(--ac);padding-left:12px;color:var(--t1);margin:8px 0;font-style:italic}
+.bubble table{border-collapse:collapse;margin:8px 0;width:100%;font-size:13px}
+.bubble th,.bubble td{border:1px solid var(--bd);padding:7px 11px;text-align:left}
+.bubble th{background:var(--bg2);font-weight:600}
+
+/* SOURCE PILLS */
+.src-row{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.src-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);padding:4px 10px;border-radius:18px;font-size:11px;color:var(--t1);cursor:pointer;transition:all .2s}
+.src-pill:hover{border-color:var(--ac);color:var(--ac)}
+
+/* TYPING */
+.typing-wrap{display:flex;gap:5px;padding:10px 14px}
+.dot-ani{width:7px;height:7px;background:var(--ac);border-radius:50%;animation:typ 1.4s ease-in-out infinite}
+.dot-ani:nth-child(2){animation-delay:.2s}.dot-ani:nth-child(3){animation-delay:.4s}
+@keyframes typ{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
+
+/* INPUT */
+.inp-area{padding:18px 22px;border-top:1px solid var(--bd);background:rgba(18,18,26,.92);backdrop-filter:blur(10px)}
+.inp-wrap{max-width:820px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
+.inp-box{flex:1;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:13px 16px;display:flex;align-items:center;transition:all .3s}
+.inp-box:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px var(--acg)}
+.inp-box textarea{flex:1;background:none;border:none;color:var(--t0);font-family:inherit;font-size:14px;resize:none;outline:none;max-height:110px;line-height:1.5}
+.inp-box textarea::placeholder{color:var(--t2)}
+.send{width:46px;height:46px;background:var(--g1);border:none;border-radius:13px;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 4px 14px var(--acg);flex-shrink:0}
+.send:hover{transform:scale(1.06)}.send:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.inp-hint{text-align:center;font-size:11px;color:var(--t2);margin-top:7px}
+
+/* SOURCE PANEL */
+.src-panel{display:none;position:fixed;right:0;top:67px;bottom:0;width:380px;background:var(--bg1);border-left:1px solid var(--bd);z-index:50;flex-direction:column;animation:slideR .28s ease}
+.src-panel.open{display:flex}
+@keyframes slideR{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.sp-head{padding:18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.sp-title{font-size:15px;font-weight:600}
+.sp-body{flex:1;overflow-y:auto;padding:16px}
+.sp-chunk{background:var(--bg3);border:1px solid var(--bd);border-radius:11px;padding:14px;margin-bottom:10px}
+.sp-file{font-size:11px;font-weight:700;color:var(--ac);margin-bottom:7px}
+.sp-txt{font-size:12px;color:var(--t1);line-height:1.6}
+.sp-score{font-size:10px;color:var(--t2);margin-top:5px}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);z-index:1000;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--bg1);border:1px solid var(--bd);border-radius:18px;padding:30px;max-width:480px;width:90%;animation:mIn .28s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal h2{font-size:19px;font-weight:700;margin-bottom:7px}
+.modal p{font-size:13px;color:var(--t1);margin-bottom:22px;line-height:1.5}
+.fg{margin-bottom:18px}
+.fl{display:block;font-size:12px;font-weight:600;color:var(--t1);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px}
+.fi{width:100%;padding:11px 15px;background:var(--bg2);border:1px solid var(--bd);border-radius:9px;color:var(--t0);font-family:inherit;font-size:13px;outline:none;transition:all .25s}
+.fi:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acg)}
+.fh{font-size:11px;color:var(--t2);margin-top:5px}
+.m-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+
+/* LOADING */
+.loader{display:none;position:fixed;inset:0;background:rgba(10,10,15,.92);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:18px}
+.loader.open{display:flex}
+.spinner{width:48px;height:48px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-txt{font-size:15px;color:var(--t1);text-align:center;max-width:320px;line-height:1.5}
+
+/* TOASTS */
+.toasts{position:fixed;top:80px;right:18px;z-index:300;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--bg3);border:1px solid var(--bd);border-radius:11px;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:9px;animation:tIn .28s ease;min-width:260px;box-shadow:0 7px 28px rgba(0,0,0,.3)}
+.toast.ok{border-left:3px solid var(--ok)}.toast.err{border-left:3px solid var(--err)}.toast.info{border-left:3px solid var(--ac)}.toast.warn{border-left:3px solid var(--warn)}
+@keyframes tIn{from{opacity:0;transform:translateX(44px)}to{opacity:1;transform:translateX(0)}}
+.empty{text-align:center;padding:36px 18px;color:var(--t2)}
+.empty .ei{font-size:36px;margin-bottom:10px}
+.empty p{font-size:13px}
+
+/* RAG progress bar */
+.rag-progress{display:none;padding:8px 22px;background:rgba(124,92,252,.06);border-top:1px solid var(--bd);font-size:11px;color:var(--t2);text-align:center}
+.rag-progress.show{display:block}
+</style>
 </head>
 <body>
-    <header class="header">
-        <div class="logo">
-            <div class="logo-icon">📖</div>
-            <span class="logo-text">NotebookAI</span>
+
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-icon">📖</div>
+    <span class="logo-text">NotebookAI</span>
+  </div>
+  <div class="hdr-right">
+    <span id="gStatus" class="badge idle"><span class="dot" style="background:var(--t2)"></span> Selecione um assunto</span>
+    <button class="btn btn-ghost" id="srcBtn" onclick="toggleSrcPanel()" style="display:none">📄 Fontes</button>
+    <button class="btn btn-sec" onclick="openModal('settingsModal')">⚙️ Configurar</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sb-head"><div class="sb-title">📚 Assuntos</div></div>
+    <div class="sb-stats" id="sbStats" style="display:none">
+      📝 <span id="stChunks">0</span> chunks &nbsp;·&nbsp; 📄 <span id="stPages">0</span> pág.
+    </div>
+    <div class="sb-list" id="sbList"><div class="empty"><div class="ei">🌐</div><p>Carregando...</p></div></div>
+  </aside>
+
+  <main class="chat">
+    <div class="msgs" id="msgs">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🧠</div>
+        <h1>Selecione um Assunto</h1>
+        <p>Escolha um tema na barra lateral para carregar os documentos e começar a conversar com a IA.</p>
+      </div>
+    </div>
+    <div class="rag-progress" id="ragProgress">⏳ Buscando nos documentos...</div>
+    <div class="inp-area">
+      <div class="inp-wrap">
+        <div class="inp-box">
+          <textarea id="chatInput" rows="1" placeholder="Pergunte sobre os documentos carregados..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
         </div>
-        <div class="header-actions">
-            <span id="globalStatus" class="status-badge idle">
-                <span style="width:6px;height:6px;background:var(--text-muted);border-radius:50%;display:inline-block;"></span> Selecione um assunto
-            </span>
-            <button class="btn btn-ghost" onclick="toggleSourcePanel()" id="sourceBtn" style="display:none;">📄 Fontes</button>
-            <button class="btn btn-secondary" onclick="openSettingsModal()">⚙️ API Key</button>
-        </div>
-    </header>
-
-    <div class="main-container">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-title">📚 Assuntos Disponíveis</div>
-            </div>
-            <div class="stats-bar" id="statsBar" style="display:none;">
-                <div class="stat-item">📝 <span class="stat-value" id="statChunks">0</span> chunks</div>
-                <div class="stat-item">📄 <span class="stat-value" id="statPages">0</span> páginas</div>
-            </div>
-            <div class="subject-list" id="subjectList">
-                <div class="empty-state"><div class="icon">🌐</div><p>Carregando lista de assuntos...</p></div>
-            </div>
-        </aside>
-
-        <main class="chat-area">
-            <div class="messages-container" id="messagesContainer">
-                <div class="welcome-screen" id="welcomeScreen">
-                    <div class="welcome-icon">🧠</div>
-                    <h1 class="welcome-title">Selecione um Assunto</h1>
-                    <p class="welcome-desc">Escolha um tema na barra lateral para carregar os documentos relacionados e começar a conversar com a IA.</p>
-                </div>
-            </div>
-            <div class="input-area">
-                <div class="input-wrapper">
-                    <div class="input-box">
-                        <textarea id="chatInput" rows="1" placeholder="Pergunte sobre o assunto selecionado..." onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
-                    </div>
-                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
-                </div>
-                <div class="input-hint">Enter para enviar · Shift+Enter para nova linha</div>
-            </div>
-        </main>
+        <button class="send" id="sendBtn" onclick="send()">➤</button>
+      </div>
+      <div class="inp-hint">Enter para enviar · Shift+Enter para nova linha</div>
     </div>
+  </main>
+</div>
 
-    <div class="source-panel" id="sourcePanel">
-        <div class="source-panel-header"><span class="source-panel-title">📄 Fontes Utilizadas</span><button class="btn btn-ghost btn-icon" onclick="toggleSourcePanel()">✕</button></div>
-        <div class="source-panel-content" id="sourcePanelContent"><div class="empty-state"><div class="icon">🔎</div><p>Faça uma pergunta para ver as fontes</p></div></div>
+<!-- Source panel -->
+<div class="src-panel" id="srcPanel">
+  <div class="sp-head"><span class="sp-title">📄 Fontes Utilizadas</span><button class="btn btn-ghost" onclick="toggleSrcPanel()">✕</button></div>
+  <div class="sp-body" id="spBody"><div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta para ver as fontes</p></div></div>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settingsModal">
+  <div class="modal">
+    <h2>⚙️ Configuração</h2>
+    <p>Configure sua chave da API Groq para usar o chat.<br>
+    Crie uma grátis em <a href="https://console.groq.com/keys" target="_blank" style="color:var(--ac)">console.groq.com/keys</a></p>
+    <div class="fg">
+      <label class="fl">Groq API Key</label>
+      <input type="password" class="fi" id="apiKey" placeholder="gsk_...">
+      <div class="fh">Salva apenas no seu navegador · Modelo: llama-3.3-70b-versatile</div>
     </div>
-
-    <div class="modal-overlay" id="settingsModal">
-        <div class="modal">
-            <h2 class="modal-title">⚙️ Configuração da API</h2>
-            <p class="modal-desc">Configure sua chave Groq. Se não tiver, use a chave padrão ou crie uma grátis em: <br><a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent);">console.groq.com/keys</a></p>
-            <div class="form-group">
-                <label class="form-label">Groq API Key</label>
-                <input type="password" class="form-input" id="apiKeyInput" placeholder="gsk_...">
-                <div class="form-hint">A chave é salva apenas no seu navegador. Modelo fixo: Llama 3.3 70B</div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeSettingsModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveSettings()">💾 Salvar</button>
-            </div>
-        </div>
+    <div class="m-actions">
+      <button class="btn btn-sec" onclick="closeModal('settingsModal')">Cancelar</button>
+      <button class="btn btn-pri" onclick="saveSettings()">💾 Salvar</button>
     </div>
+  </div>
+</div>
 
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text" id="loadingText">Carregando...</div>
-    </div>
-    <div class="toast-container" id="toastContainer"></div>
+<!-- Loader -->
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-txt" id="loaderTxt">Carregando...</div>
+</div>
+<div class="toasts" id="toasts"></div>
 
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-        // ── State ──────────────────────────────────────────────────────────────
-        let state = {
-            currentSubject: null,
-            subjectsCache: {},          // stores full subjects map so we can re-render sidebar anytime
-            documents: [],
-            allChunks: [],
-            messages: [],
-            isProcessing: false,
-            lastSources: [],
-            settings: { apiKey: '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' }
-        };
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const S = {
+  subject: null,
+  subjectsMap: {},
+  docs: [],
+  chunks: [],       // {text, docName, docId, idx}
+  // BM25 inverted index
+  bm25: { index: {}, df: {}, avgdl: 0, N: 0 },
+  msgs: [],
+  busy: false,
+  lastSources: [],
+  cfg: { apiKey: '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' }
+};
 
-        // ── Init ───────────────────────────────────────────────────────────────
-        document.addEventListener('DOMContentLoaded', () => {
-            loadSettings();
-            loadSubjectsList();
-        });
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('nai_cfg');
+  if (saved) try { S.cfg = { ...S.cfg, ...JSON.parse(saved) }; } catch {}
+  document.getElementById('apiKey').value = S.cfg.apiKey;
+  loadSubjects();
+});
 
-        // ── Settings ───────────────────────────────────────────────────────────
-        function loadSettings() {
-            const saved = localStorage.getItem('notebookai_settings');
-            if (saved) { try { state.settings = { ...state.settings, ...JSON.parse(saved) }; } catch(e) {} }
-            document.getElementById('apiKeyInput').value = state.settings.apiKey;
-        }
-        function saveSettings() {
-            const key = document.getElementById('apiKeyInput').value.trim();
-            if (!key.startsWith('gsk_') && key.length < 10) { showToast('Formato inválido.', 'error'); return; }
-            state.settings.apiKey = key;
-            localStorage.setItem('notebookai_settings', JSON.stringify({ apiKey: key }));
-            closeSettingsModal();
-            showToast('API Key salva!', 'success');
-        }
-        function openSettingsModal() { document.getElementById('settingsModal').classList.add('active'); }
-        function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); }
+// ═══════════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════════
+function saveSettings() {
+  const k = document.getElementById('apiKey').value.trim();
+  if (!k.startsWith('gsk_')) { toast('Chave inválida (deve começar com gsk_)', 'err'); return; }
+  S.cfg.apiKey = k;
+  localStorage.setItem('nai_cfg', JSON.stringify({ apiKey: k }));
+  closeModal('settingsModal');
+  toast('✅ API Key salva!', 'ok');
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-        // ── Load subjects list ─────────────────────────────────────────────────
-        async function loadSubjectsList() {
-            try {
-                const res = await fetch('pdf/subjects.json');
-                if (!res.ok) throw new Error('Arquivo não encontrado');
-                const subjects = await res.json();
-                state.subjectsCache = subjects;    // ← cache for later re-renders
-                renderSubjectList(subjects);
-            } catch(e) {
-                document.getElementById('subjectList').innerHTML =
-                    `<div class="empty-state"><div class="icon">⚠️</div><p>Crie o arquivo <code>pdf/subjects.json</code> no repositório.</p></div>`;
-                showToast('Erro ao carregar lista de assuntos.', 'error');
+// ═══════════════════════════════════════════════════════════════
+// LOAD SUBJECTS
+// ═══════════════════════════════════════════════════════════════
+async function loadSubjects() {
+  try {
+    const r = await fetch('pdf/subjects.json');
+    if (!r.ok) throw new Error();
+    S.subjectsMap = await r.json();
+    renderSidebar();
+  } catch {
+    document.getElementById('sbList').innerHTML = '<div class="empty"><div class="ei">⚠️</div><p>Crie <code>pdf/subjects.json</code></p></div>';
+  }
+}
+
+function renderSidebar() {
+  const list = document.getElementById('sbList');
+  const entries = Object.entries(S.subjectsMap);
+  if (!entries.length) { list.innerHTML = '<div class="empty"><div class="ei">📭</div><p>Nenhum assunto configurado.</p></div>'; return; }
+  list.innerHTML = entries.map(([name, files]) => {
+    const active = name === S.subject ? ' active' : '';
+    const busy   = (name === S.subject && S.busy) ? ' busy-item' : '';
+    const icon   = (name === S.subject && S.busy) ? '⏳' : '📚';
+    return `<div class="sb-item${active}${busy}" onclick="selectSubject('${esc(name)}')" data-name="${esc(name)}">
+      <div class="sb-icon">${icon}</div>
+      <div><div class="sb-name">${name}</div><div class="sb-sub">${files.length} doc(s)</div></div>
+    </div>`;
+  }).join('');
+}
+function esc(s) { return s.replace(/'/g,"\\\'").replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════════════════════════
+// SELECT SUBJECT
+// ═══════════════════════════════════════════════════════════════
+async function selectSubject(name) {
+  if (S.busy) return;
+  S.subject = name; S.docs = []; S.chunks = []; S.msgs = []; S.lastSources = [];
+  S.busy = true;
+  clearChat(); renderSidebar(); updateStatus(); updateStats();
+  document.getElementById('srcBtn').style.display = 'none';
+
+  const files = S.subjectsMap[name] || [];
+  showLoader(`Carregando "${name}" (0/${files.length})...`);
+
+  let loaded = 0;
+  for (let i = 0; i < files.length; i++) {
+    showLoader(`📄 Processando ${i+1}/${files.length}: ${files[i]}`);
+    try {
+      const resp = await fetch(`pdf/${encodeURIComponent(name)}/${files[i]}`);
+      if (resp.ok && await ingestPDF(await resp.blob(), files[i])) loaded++;
+    } catch(e) { console.warn('PDF skip:', files[i], e); }
+  }
+
+  // Build BM25 index after all PDFs loaded
+  showLoader('🔍 Construindo índice de busca...');
+  buildBM25();
+
+  S.busy = false;
+  hideLoader(); renderSidebar(); updateStatus(); updateStats();
+  document.getElementById('welcome').style.display = loaded > 0 ? 'none' : 'flex';
+  toast(loaded > 0 ? `✅ "${name}" — ${loaded} PDF(s) carregado(s)` : `⚠️ Nenhum PDF carregado`, loaded > 0 ? 'ok' : 'warn');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PDF INGESTION
+// ═══════════════════════════════════════════════════════════════
+async function ingestPDF(blob, name) {
+  try {
+    const buf = await blob.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    let full = '';
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page    = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      // Preserve line breaks by grouping items by Y position
+      const lines = {};
+      for (const item of content.items) {
+        const y = Math.round(item.transform[5]);
+        if (!lines[y]) lines[y] = [];
+        lines[y].push(item.str);
+      }
+      const pageText = Object.keys(lines).sort((a,b)=>b-a).map(y => lines[y].join(' ')).join('\n');
+      full += pageText + '\n\n';
+    }
+    const docId = `${name}_${Date.now()}`;
+    const chunks = smartChunk(full, name, docId);
+    S.docs.push({ name, pages: pdf.numPages, docId });
+    S.chunks.push(...chunks);
+    updateStats();
+    return true;
+  } catch(e) { toast(`Erro em ${name}: ${e.message}`, 'err'); return false; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SMART CHUNKING — sentence-aware, 400 words, 100 overlap
+// ═══════════════════════════════════════════════════════════════
+function smartChunk(text, docName, docId) {
+  // Clean & normalize
+  text = text.replace(/\s+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+
+  // Split into sentences (respecting common PT abbreviations)
+  const sentenceRx = /(?<=[.!?;])\s+(?=[A-ZÁÉÍÓÚÀÂÊÔÃÕ])/g;
+  const sentences  = text.split(sentenceRx).filter(s => s.trim().length > 10);
+
+  const chunks = [];
+  const TARGET = 400; // words per chunk
+  const OVERLAP_SENTS = 2;
+
+  let buf = [];
+  let wc  = 0;
+  let idx = 0;
+
+  for (let i = 0; i < sentences.length; i++) {
+    const s = sentences[i];
+    const sw = s.split(/\s+/).length;
+    buf.push(s);
+    wc += sw;
+
+    if (wc >= TARGET || i === sentences.length - 1) {
+      const chunkText = buf.join(' ').trim();
+      if (chunkText.length > 60) {
+        chunks.push({ text: chunkText, docName, docId, idx: idx++ });
+      }
+      // Overlap: keep last N sentences for next chunk
+      buf = buf.slice(-OVERLAP_SENTS);
+      wc  = buf.reduce((s, x) => s + x.split(/\s+/).length, 0);
+    }
+  }
+  return chunks;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BM25 INDEX
+// ═══════════════════════════════════════════════════════════════
+const STOPWORDS_PT = new Set([
+  'de','da','do','das','dos','em','no','na','nos','nas','um','uma','uns','umas',
+  'o','a','os','as','e','é','ao','aos','às','por','para','com','que','se','não',
+  'ou','mas','seu','sua','seus','suas','mais','como','já','também','isso','este',
+  'esta','esse','essa','isso','aqui','lá','foi','ser','ter','tem','há','são','isso'
+]);
+
+function tokenize(text) {
+  return text.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // remove diacritics for matching
+    .replace(/[^a-z0-9\s]/g,' ')
+    .split(/\s+/)
+    .filter(t => t.length > 2 && !STOPWORDS_PT.has(t));
+}
+
+function buildBM25() {
+  const k1 = 1.5, b = 0.75;
+  const N  = S.chunks.length;
+  if (!N) return;
+
+  // Term frequencies per doc
+  const tfs = S.chunks.map(c => {
+    const tokens = tokenize(c.text);
+    const tf = {};
+    for (const t of tokens) tf[t] = (tf[t]||0) + 1;
+    return { tf, len: tokens.length };
+  });
+
+  // Document frequency
+  const df = {};
+  for (const { tf } of tfs) for (const t of Object.keys(tf)) df[t] = (df[t]||0) + 1;
+
+  const avgdl = tfs.reduce((s,d)=>s+d.len,0) / N;
+
+  S.bm25 = { tfs, df, avgdl, N, k1, b };
+}
+
+function bm25Score(queryTerms, docIdx) {
+  const { tfs, df, avgdl, N, k1, b } = S.bm25;
+  if (!tfs || !tfs[docIdx]) return 0;
+  const { tf, len } = tfs[docIdx];
+  let score = 0;
+  for (const t of queryTerms) {
+    if (!tf[t]) continue;
+    const idf = Math.log((N - (df[t]||0) + 0.5) / ((df[t]||0) + 0.5) + 1);
+    const num  = tf[t] * (k1 + 1);
+    const den  = tf[t] + k1 * (1 - b + b * len / avgdl);
+    score += idf * num / den;
+  }
+  return score;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HYBRID SEARCH  (BM25 + synonym expansion + reranking)
+// ═══════════════════════════════════════════════════════════════
+const SYNONYMS = {
+  'praça':['pracas','soldado','sd','cabo','cb','sargento','sg','subtenente','st','graduado','graduados','pracas'],
+  'pracas':['praca','soldado','sd','cabo','cb','sargento','sg','subtenente','st','graduado','graduados'],
+  'medalha':['medalhas','condecoração','condecoracoes','distincao','distincoes','honraria','comenda','merecimento'],
+  'medalhas':['medalha','condecoracoes','condecoração'],
+  'ponto':['pontos','pontuacao','pontuacoes','credito','creditos'],
+  'pontos':['ponto','pontuacao','credito'],
+  'valer':['vale','valem','equivale','corresponde','contam','conta','pontuam','pontua','computa'],
+  'valem':['vale','valer','equivalem','contam','pontuam'],
+  'promocao':['promoções','promovido','promover','ascensao','promovidos'],
+  'promoção':['promocao','promovido','promover'],
+  'curso':['cursos','formação','formacao','treinamento','capacitacao','qualificacao'],
+  'oficial':['oficiais','tenente','capitao','major','coronel','tc','cel'],
+  'bombeiro':['bombeiros','cbmgo','cbm','cbmdf','cbmsp'],
+  'militar':['militares','efetivo','efetivos','integrante'],
+  'remuneracao':['salario','vencimento','vencimentos','soldo','soldos','remuneração'],
+  'licenca':['licenças','licença','afastamento'],
+  'falta':['faltas','ausencia','ausencias','infracao','infração'],
+  'disciplinar':['disciplina','disciplinas','punicao','punição','sancao'],
+};
+
+function expandTerms(query) {
+  const base = tokenize(query);
+  const expanded = new Set(base);
+  for (const t of base) {
+    if (SYNONYMS[t]) SYNONYMS[t].forEach(s => expanded.add(s));
+    // Also try removing last char (simple stemming: pontos→ponto)
+    if (t.length > 4) expanded.add(t.slice(0,-1));
+  }
+  return [...expanded];
+}
+
+function hybridSearch(query, topK = 12) {
+  if (!S.chunks.length) return [];
+  const terms    = expandTerms(query);
+  const qLower   = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').trim();
+
+  // Score every chunk
+  const scored = S.chunks.map((chunk, i) => {
+    let score = bm25Score(terms, i);
+
+    // Bonus: exact phrase match (very strong signal)
+    const cLow = chunk.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if (cLow.includes(qLower)) score += 15;
+
+    // Bonus: multi-term proximity (terms appear close together)
+    const positions = {};
+    const cWords = cLow.split(/\s+/);
+    for (const t of terms) {
+      for (let j = 0; j < cWords.length; j++) {
+        if (cWords[j].startsWith(t.slice(0,5))) { positions[t] = (positions[t]||[]); positions[t].push(j); }
+      }
+    }
+    const posArrays = Object.values(positions).filter(a => a.length > 0);
+    if (posArrays.length >= 2) {
+      // Check if terms appear within 20 words of each other
+      for (let a = 0; a < posArrays.length; a++) {
+        for (let b2 = a+1; b2 < posArrays.length; b2++) {
+          for (const pa of posArrays[a]) {
+            for (const pb of posArrays[b2]) {
+              if (Math.abs(pa-pb) < 20) { score += 3; }
             }
+          }
         }
+      }
+    }
 
-        // ── Render sidebar list ────────────────────────────────────────────────
-        // Always uses the cached map; marks the active item correctly.
-        function renderSubjectList(subjects) {
-            const list = document.getElementById('subjectList');
-            if (!subjects || Object.keys(subjects).length === 0) {
-                list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum assunto configurado.</p></div>`;
-                return;
-            }
-            list.innerHTML = Object.entries(subjects).map(([name, files]) => {
-                const isActive   = name === state.currentSubject;
-                const isLoading  = name === state.currentSubject && state.isProcessing;
-                return `
-                <div class="subject-item${isActive ? ' active' : ''}${isLoading ? ' loading-item' : ''}"
-                     onclick="selectSubject('${name.replace(/'/g, "\\'")}', this)"
-                     data-subject="${name.replace(/"/g, '&quot;')}">
-                    <div class="subject-icon">${isLoading ? '⏳' : '📚'}</div>
-                    <div class="subject-info">
-                        <div class="subject-name">${name}</div>
-                        <div class="subject-count">${files.length} documento(s)</div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+    return { ...chunk, score };
+  });
 
-        // ── Select a subject ───────────────────────────────────────────────────
-        async function selectSubject(name) {
-            if (state.isProcessing) return;                     // ignore clicks while loading
+  return scored.filter(c => c.score > 0).sort((a,b) => b.score-a.score).slice(0, topK);
+}
 
-            // Visual: mark active & start loading state
-            state.currentSubject = name;
-            state.isProcessing   = true;
-            renderSubjectList(state.subjectsCache);             // re-render with active + loading-item
+// ═══════════════════════════════════════════════════════════════
+// BUILD CONTEXT — diverse docs, neighbour expansion, char budget
+// ═══════════════════════════════════════════════════════════════
+function buildContext(query) {
+  const hits = hybridSearch(query, 12);
+  if (!hits.length) return { context: '(Nenhum trecho relevante encontrado.)', sources: [] };
 
-            // Reset content
-            state.documents  = [];
-            state.allChunks  = [];
-            state.messages   = [];
-            state.lastSources = [];
-            clearChatArea();
-            updateStats();
-            updateGlobalStatus();
-            document.getElementById('sourceBtn').style.display = 'none';
+  const MAX_CHARS = 9000;   // ~2250 tokens context
+  const CHUNK_CAP = 700;    // max chars per excerpt
+  const seen   = new Set();
+  const parts  = [];
+  let   total  = 0;
 
-            showLoading(`Carregando "${name}"...`);
+  // Build a quick lookup: docId → sorted chunks by index
+  const byDoc = {};
+  for (const c of S.chunks) {
+    if (!byDoc[c.docId]) byDoc[c.docId] = [];
+    byDoc[c.docId].push(c);
+  }
+  for (const arr of Object.values(byDoc)) arr.sort((a,b)=>a.idx-b.idx);
 
-            const files = state.subjectsCache[name] || [];
-            const pdfFolder = `pdf/${encodeURIComponent(name)}/`;
-            let loaded = 0;
+  for (const hit of hits) {
+    if (total >= MAX_CHARS) break;
+    const docChunks = byDoc[hit.docId] || [];
+    const pos       = docChunks.findIndex(c => c.idx === hit.idx);
 
-            for (let i = 0; i < files.length; i++) {
-                showLoading(`Processando ${i + 1}/${files.length}: ${files[i]}`);
-                try {
-                    const response = await fetch(pdfFolder + files[i]);
-                    if (response.ok) {
-                        const ok = await loadPDFFromBlob(await response.blob(), files[i]);
-                        if (ok) loaded++;
-                    } else {
-                        console.warn(`⚠️ HTTP ${response.status}: ${files[i]}`);
-                    }
-                } catch(e) {
-                    console.warn(`⚠️ Falha ao buscar: ${files[i]}`, e);
-                }
-            }
+    // Include hit chunk + next chunk (for continuity)
+    const candidates = [docChunks[pos], docChunks[pos+1]].filter(Boolean);
 
-            state.isProcessing = false;
-            hideLoading();
-            renderSubjectList(state.subjectsCache);             // re-render without loading-item
-            updateStats();
-            updateGlobalStatus();
+    for (const cand of candidates) {
+      const key = `${cand.docId}:${cand.idx}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const txt     = cand.text.length > CHUNK_CAP ? cand.text.slice(0, CHUNK_CAP)+'…' : cand.text;
+      const section = `📄 **${cand.docName}**\n${txt}`;
+      parts.push(section);
+      total += txt.length;
+      if (total >= MAX_CHARS) break;
+    }
+  }
 
-            const ws = document.getElementById('welcomeScreen');
-            ws.style.display = loaded > 0 ? 'none' : 'flex';
+  return {
+    context: parts.join('\n\n---\n\n'),
+    sources: hits.slice(0, 8)
+  };
+}
 
-            showToast(
-                loaded > 0 ? `✅ "${name}" carregado (${loaded} PDF${loaded > 1 ? 's' : ''})` : `⚠️ Nenhum PDF carregado para "${name}"`,
-                loaded > 0 ? 'success' : 'error'
-            );
-        }
+// ═══════════════════════════════════════════════════════════════
+// LLM
+// ═══════════════════════════════════════════════════════════════
+async function callGroq(messages) {
+  const key = S.cfg.apiKey;
+  if (!key?.startsWith('gsk_')) throw new Error('Configure sua API Key em ⚙️ Configurar.');
 
-        // ── Clear chat (keep welcome screen) ──────────────────────────────────
-        function clearChatArea() {
-            const c = document.getElementById('messagesContainer');
-            // Remove all messages but keep #welcomeScreen
-            Array.from(c.children).forEach(child => {
-                if (child.id !== 'welcomeScreen') child.remove();
-            });
-            document.getElementById('welcomeScreen').style.display = 'flex';
-        }
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      temperature: 0.1,
+      max_tokens: 1500
+    })
+  });
 
-        // ── PDF loading & chunking ─────────────────────────────────────────────
-        async function loadPDFFromBlob(inputData, name) {
-            try {
-                let arrayBuffer = inputData instanceof ArrayBuffer ? inputData : await inputData.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-                let fullText = '';
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const content = await pdf.getPage(i).then(p => p.getTextContent());
-                    fullText += content.items.map(item => item.str).join(' ') + '\n\n';
-                }
-                const chunks = chunkText(fullText, name, 350, 80);
-                const docId = Date.now() + Math.random();
-                state.documents.push({ id: docId, name, text: fullText, chunks, pages: pdf.numPages, wordCount: fullText.split(/\s+/).length });
-                state.allChunks.push(...chunks.map(c => ({ ...c, docId, docName: name })));
-                updateStats();
-                return true;
-            } catch (e) {
-                showToast(`Erro em ${name}: ${e.message}`, 'error');
-                return false;
-            }
-        }
+  if (!resp.ok) {
+    const body = await resp.json().catch(()=>({}));
+    const msg  = body?.error?.message || '';
+    if (resp.status === 413) throw new Error('Contexto muito grande — tente perguntar algo mais específico.');
+    if (resp.status === 401) throw new Error('API Key inválida ou expirada.');
+    if (resp.status === 429) throw new Error('Limite de requisições atingido. Aguarde alguns segundos.');
+    throw new Error(`Erro ${resp.status}: ${msg}`);
+  }
+  return (await resp.json()).choices[0].message.content;
+}
 
-        function chunkText(text, docName, chunkSize = 350, overlap = 80) {
-            const words = text.split(/\s+/);
-            const chunks = [];
-            let i = 0;
-            while (i < words.length) {
-                const end = Math.min(i + chunkSize, words.length);
-                let chunk = words.slice(i, end).join(' ');
-                const lp = chunk.lastIndexOf('.');
-                if (lp > chunkSize * 0.5) chunk = chunk.substring(0, lp + 1);
-                chunks.push({ text: chunk, docName, startIndex: i, endIndex: end });
-                i += chunkSize - overlap;
-            }
-            return chunks;
-        }
+// ═══════════════════════════════════════════════════════════════
+// SEND MESSAGE
+// ═══════════════════════════════════════════════════════════════
+async function send() {
+  const inp = document.getElementById('chatInput');
+  const q   = inp.value.trim();
+  if (!q || S.busy) return;
+  if (!S.subject)            return toast('Selecione um assunto primeiro.', 'warn');
+  if (!S.docs.length)        return toast('Aguarde o carregamento dos documentos.', 'warn');
 
-        // ── Search & context ───────────────────────────────────────────────────
+  inp.value = ''; resize(inp);
+  document.getElementById('welcome').style.display = 'none';
+  addMsg('user', q);
+  S.busy = true; updateSendBtn();
 
-        // Expande a query com sinônimos e variações comuns em português
-        function expandQuery(query) {
-            const synonyms = {
-                'praça': ['praças', 'soldado', 'cabo', 'sargento', 'subtenente', 'graduado', 'graduados', 'sd', 'cb', 'st'],
-                'praças': ['praça', 'soldado', 'cabo', 'sargento', 'subtenente', 'graduado', 'graduados'],
-                'medalha': ['medalhas', 'condecoração', 'condecorações', 'distinção', 'distinções', 'honraria'],
-                'medalhas': ['medalha', 'condecoração', 'condecorações'],
-                'ponto': ['pontos', 'pontuação', 'pontuações', 'crédito', 'créditos', 'escore'],
-                'pontos': ['ponto', 'pontuação', 'crédito'],
-                'valem': ['vale', 'equivale', 'corresponde', 'contam', 'conta', 'pontuam', 'pontua'],
-                'valer': ['vale', 'equivale', 'pontuar'],
-                'promoção': ['promoções', 'promovido', 'promover', 'ascensão'],
-                'curso': ['cursos', 'formação', 'treinamento', 'capacitação'],
-                'oficial': ['oficiais', 'tenente', 'capitão', 'major', 'coronel'],
-                'bombeiro': ['bombeiros', 'cbm', 'corpo de bombeiros'],
-                'militar': ['militares', 'efetivo', 'efetivos'],
-            };
-            const terms = new Set(
-                query.toLowerCase()
-                     .replace(/[^\w\sàáâãéêíóôõúüç]/gi, ' ')
-                     .split(/\s+/)
-                     .filter(w => w.length > 2)
-            );
-            for (const t of [...terms]) {
-                if (synonyms[t]) synonyms[t].forEach(s => terms.add(s));
-            }
-            return [...terms];
-        }
+  // Show search progress
+  const prog = document.getElementById('ragProgress');
+  prog.textContent = '🔍 Buscando nos documentos...';
+  prog.classList.add('show');
 
-        // Score de relevância de um chunk dado um conjunto de termos
-        function scoreChunk(chunkText, queryLower, terms) {
-            const t = chunkText.toLowerCase();
-            let s = 0;
-            // Frase exata tem peso altíssimo
-            if (t.includes(queryLower)) s += 100;
-            for (const term of terms) {
-                // Ocorrências exatas
-                const m = t.match(new RegExp('\\b' + term + '\\b', 'gi'));
-                if (m) s += m.length * 8;
-                // Ocorrências parciais (prefixo de 4+ chars)
-                for (let l = Math.min(term.length, 8); l >= 4; l--) {
-                    if (t.includes(term.substring(0, l))) { s += 2; break; }
-                }
-            }
-            // Bônus: densidade (muitos termos em pouco texto = mais relevante)
-            if (s > 0) s += (s / chunkText.length) * 50;
-            return s;
-        }
+  const tid = addTyping();
 
-        // Busca multi-passagem: passa 1 com query completa, passa 2 com termos individuais
-        function searchChunks(query, topK = 10) {
-            const queryLower = query.toLowerCase().replace(/[^\w\sàáâãéêíóôõúüç]/gi, ' ').trim();
-            const terms      = expandQuery(query);
+  try {
+    // Step 1: retrieve context
+    const { context, sources } = buildContext(q);
+    S.lastSources = sources;
 
-            if (!terms.length) return [];
+    prog.textContent = '🧠 Gerando resposta...';
 
-            // Passa 1: score completo
-            const scored = state.allChunks.map(c => ({
-                ...c,
-                score: scoreChunk(c.text, queryLower, terms)
-            })).filter(c => c.score > 0);
+    // Step 2: build system prompt (NotebookLM-style: thorough, grounded, structured)
+    const system = `Você é um assistente especializado em análise de documentos, similar ao NotebookLM do Google.
 
-            // Passa 2: fallback — se menos de 3 resultados, busca apenas os termos mais relevantes (>3 chars)
-            if (scored.length < 3) {
-                const keyTerms = terms.filter(t => t.length > 3);
-                const fallback = state.allChunks.map(c => {
-                    const t = c.text.toLowerCase();
-                    let s = 0;
-                    for (const term of keyTerms) if (t.includes(term)) s += 5;
-                    return { ...c, score: s };
-                }).filter(c => c.score > 0 && !scored.find(x => x.text === c.text));
-                scored.push(...fallback);
-            }
+MISSÃO: Responder perguntas com base EXCLUSIVAMENTE nos trechos dos documentos fornecidos abaixo.
 
-            return scored.sort((a, b) => b.score - a.score).slice(0, topK);
-        }
+INSTRUÇÕES DE QUALIDADE:
+1. Leia TODOS os trechos fornecidos antes de responder.
+2. Procure termos equivalentes: "praças" pode estar como "graduados", "SD", "CB", "ST", "sargento"; "medalha" como "condecoração" ou "distinção"; "pontos" como "créditos" ou "pontuação"; etc.
+3. Se encontrar informação relevante, apresente-a de forma clara, estruturada e completa.
+4. Use listas, tabelas ou tópicos sempre que facilitar a leitura.
+5. Sempre cite a fonte entre colchetes ao final de cada informação: [nome_do_arquivo.pdf].
+6. Se a informação estiver incompleta nos documentos, diga o que encontrou e aponte o que falta.
+7. Somente responda "não encontrei" se após examinar TODOS os trechos não houver nenhuma informação relacionada.
+8. NÃO use conhecimento externo. Baseie-se apenas nos trechos abaixo.
 
-        // Monta o contexto garantindo diversidade de documentos e sem estourar tokens
-        function buildContext(query) {
-            const rel = searchChunks(query, 10);
+TRECHOS DOS DOCUMENTOS (assunto: ${S.subject}):
+${context}`;
 
-            const MAX_CONTEXT_CHARS = 7500; // ~1875 tokens de contexto
-            const MAX_CHUNK_CHARS   = 600;  // cada chunk truncado individualmente
-            const seen   = new Set();
-            const texts  = [];
-            let   total  = 0;
+    // Keep last 4 exchanges (8 messages) as history
+    const history = S.msgs.slice(-8).map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.content
+    }));
 
-            // Índice por docId para expansão de vizinhos
-            const chunksByDoc = {};
-            for (const c of state.allChunks) {
-                if (!chunksByDoc[c.docId]) chunksByDoc[c.docId] = [];
-                chunksByDoc[c.docId].push(c);
-            }
+    const answer = await callGroq([
+      { role: 'system', content: system },
+      ...history,
+      { role: 'user', content: q }
+    ]);
 
-            for (const chunk of rel) {
-                if (total >= MAX_CONTEXT_CHARS) break;
-                const dc  = chunksByDoc[chunk.docId] || [];
-                const idx = dc.findIndex(c => c.text === chunk.text);
+    removeTyping(tid);
+    prog.classList.remove('show');
+    addMsg('ai', answer, sources);
 
-                // Inclui o chunk principal + vizinhos imediatos
-                const candidates = [dc[idx], dc[idx + 1]].filter(Boolean);
+    if (sources.length) document.getElementById('srcBtn').style.display = 'inline-flex';
+    S.msgs.push({ role: 'user', content: q }, { role: 'ai', content: answer });
 
-                for (const cand of candidates) {
-                    if (seen.has(cand.text)) continue;
-                    seen.add(cand.text);
-                    const excerpt = cand.text.length > MAX_CHUNK_CHARS
-                        ? cand.text.substring(0, MAX_CHUNK_CHARS) + '…'
-                        : cand.text;
-                    texts.push(`[${cand.docName}]\n${excerpt}`);
-                    total += excerpt.length;
-                    if (total >= MAX_CONTEXT_CHARS) break;
-                }
-            }
+  } catch(e) {
+    removeTyping(tid);
+    prog.classList.remove('show');
+    addMsg('ai', `❌ **Erro:** ${e.message}`);
+    toast(e.message, 'err');
+  }
 
-            // Se nada foi encontrado, avisa explicitamente
-            if (!texts.length) {
-                return {
-                    context: '(Nenhum trecho relevante encontrado nos documentos para esta pergunta.)',
-                    sources: []
-                };
-            }
+  S.busy = false; updateSendBtn();
+}
 
-            return { context: texts.join('\n\n---\n\n'), sources: rel.slice(0, 6) };
-        }
+// ═══════════════════════════════════════════════════════════════
+// CHAT RENDERING
+// ═══════════════════════════════════════════════════════════════
+function addMsg(role, text, sources=[]) {
+  const c   = document.getElementById('msgs');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const srcHTML = sources.length
+    ? `<div class="src-row">${[...new Set(sources.map(s=>s.docName))].map(d=>`<span class="src-pill" onclick="showSrc('${esc(d)}')">📄 ${d}</span>`).join('')}</div>`
+    : '';
+  div.innerHTML = `
+    <div class="av">${role==='ai'?'🧠':'👤'}</div>
+    <div class="msg-body">
+      <div class="bubble">${md(text)}</div>
+      ${srcHTML}
+    </div>`;
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+}
 
-        // ── LLM call ───────────────────────────────────────────────────────────
-        async function callLLM(messages) {
-            const { apiKey } = state.settings;
-            if (!apiKey?.startsWith('gsk_')) throw new Error('API Key inválida. Configure em ⚙️ API Key.');
+function addTyping() {
+  const c   = document.getElementById('msgs');
+  const id  = 'ty' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = id;
+  div.innerHTML = `<div class="av">🧠</div><div class="msg-body"><div class="bubble"><div class="typing-wrap"><div class="dot-ani"></div><div class="dot-ani"></div><div class="dot-ani"></div></div></div></div>`;
+  c.appendChild(div); c.scrollTop = c.scrollHeight;
+  return id;
+}
+function removeTyping(id) { document.getElementById(id)?.remove(); }
 
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages,
-                    temperature: 0.2,
-                    max_tokens: 1024          // ← reduced to leave room for input
-                })
-            });
+function clearChat() {
+  const c = document.getElementById('msgs');
+  [...c.children].forEach(ch => { if (ch.id !== 'welcome') ch.remove(); });
+  document.getElementById('welcome').style.display = 'flex';
+}
 
-            if (!res.ok) {
-                let errMsg = `Groq retornou status ${res.status}.`;
-                if (res.status === 413) errMsg = 'Contexto muito grande (413). Tente uma pergunta mais específica.';
-                if (res.status === 401) errMsg = 'API Key inválida ou expirada (401).';
-                if (res.status === 429) errMsg = 'Limite de requisições atingido (429). Aguarde um momento.';
-                throw new Error(errMsg);
-            }
-            return (await res.json()).choices[0].message.content;
-        }
+// Markdown renderer
+function md(t) {
+  // Code blocks
+  t = t.replace(/```[\w]*\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Headers
+  t = t.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  t = t.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  t = t.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+  // Bold & italic
+  t = t.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+  // Blockquote
+  t = t.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+  // Tables (simple)
+  t = t.replace(/^\|(.+)\|$/gm, (match) => {
+    if (match.includes('---')) return '<tr-sep>';
+    const cells = match.slice(1,-1).split('|').map(c=>`<td>${c.trim()}</td>`).join('');
+    return `<tr>${cells}</tr>`;
+  });
+  if (t.includes('<tr>')) {
+    t = t.replace(/<tr-sep>/g,'').replace(/(<tr>.*?<\/tr>)/gs, (_, rows) => `<table>${rows}</table>`);
+  }
+  // Lists
+  t = t.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+  t = t.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
+  t = t.replace(/(<li>[\s\S]+?<\/li>)/g, '<ul>$1</ul>');
+  // Paragraphs
+  const parts = t.split(/\n\n+/);
+  t = parts.map(p => {
+    if (/^<(h[123]|ul|ol|pre|table|blockquote)/.test(p.trim())) return p;
+    return `<p>${p.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+  return t;
+}
 
-        // ── Send message ───────────────────────────────────────────────────────
-        async function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const msg   = input.value.trim();
-            if (!msg || state.isProcessing) return;
-            if (!state.currentSubject) return showToast('Selecione um assunto primeiro.', 'warning');
-            if (!state.documents.length) return showToast('Aguarde o carregamento dos documentos.', 'warning');
+// ═══════════════════════════════════════════════════════════════
+// SOURCE PANEL
+// ═══════════════════════════════════════════════════════════════
+function toggleSrcPanel() {
+  const p = document.getElementById('srcPanel');
+  p.classList.toggle('open');
+  if (p.classList.contains('open')) renderSrcPanel(S.lastSources);
+}
+function showSrc(docName) {
+  const filtered = S.lastSources.filter(s => s.docName === decodeURIComponent(docName));
+  const panel = document.getElementById('srcPanel');
+  panel.classList.add('open');
+  renderSrcPanel(filtered.length ? filtered : S.lastSources);
+}
+function renderSrcPanel(sources) {
+  document.getElementById('spBody').innerHTML = sources.length
+    ? sources.map(s => `
+        <div class="sp-chunk">
+          <div class="sp-file">📄 ${s.docName}</div>
+          <div class="sp-txt">${s.text.slice(0,400)}${s.text.length>400?'…':''}</div>
+          <div class="sp-score">Relevância BM25: ${s.score.toFixed(2)}</div>
+        </div>`).join('')
+    : '<div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta para ver as fontes</p></div>';
+}
 
-            input.value = '';
-            autoResize(input);
-            document.getElementById('welcomeScreen').style.display = 'none';
-            addMessage('user', msg);
+// ═══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════
+function onKey(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); send(); } }
+function resize(t) { t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,110)+'px'; }
+function updateSendBtn() { document.getElementById('sendBtn').disabled = S.busy; }
 
-            state.isProcessing = true;
-            updateSendButton();
-            const tid = addTypingIndicator();
+function updateStats() {
+  const total = S.docs.reduce((s,d)=>s+d.pages,0);
+  document.getElementById('stChunks').textContent = S.chunks.length;
+  document.getElementById('stPages').textContent  = total;
+  document.getElementById('sbStats').style.display = S.docs.length ? 'flex' : 'none';
+}
 
-            try {
-                const { context, sources } = buildContext(msg);
-                state.lastSources = sources;
+function updateStatus() {
+  const el = document.getElementById('gStatus');
+  if (!S.subject) {
+    el.className='badge idle'; el.innerHTML='<span class="dot" style="background:var(--t2)"></span> Selecione um assunto';
+  } else if (S.busy) {
+    el.className='badge busy'; el.innerHTML='<span class="dot" style="background:var(--warn)"></span> Carregando...';
+  } else if (!S.docs.length) {
+    el.className='badge busy'; el.innerHTML='<span class="dot" style="background:var(--warn)"></span> Sem documentos';
+  } else {
+    el.className='badge ok'; el.innerHTML=`<span class="dot" style="background:var(--ok)"></span> 📚 ${S.subject}`;
+  }
+}
 
-                // System prompt
-                const systemPrompt =
-                    `Você é um especialista em análise de documentos militares/oficiais em português.\n` +
-                    `Responda usando EXCLUSIVAMENTE os trechos abaixo.\n\n` +
-                    `REGRAS:\n` +
-                    `1. Leia TODOS os trechos antes de responder.\n` +
-                    `2. Procure termos relacionados: "praça" pode aparecer como "graduado","SD","CB","ST","sargento" etc.\n` +
-                    `3. Se informação for parcial, apresente-a e explique a relação.\n` +
-                    `4. Cite a fonte: [nome_arquivo.pdf].\n` +
-                    `5. Diga "não encontrei" SOMENTE se nenhum trecho tiver qualquer dado relevante.\n` +
-                    `6. Use listas quando houver múltiplos itens.\n\n` +
-                    `TRECHOS [${state.currentSubject}]:\n${context}`;
+function showLoader(txt) {
+  document.getElementById('loaderTxt').textContent = txt;
+  document.getElementById('loader').classList.add('open');
+}
+function hideLoader() { document.getElementById('loader').classList.remove('open'); }
 
-                // Keep only last 3 exchanges to save tokens
-                const history = state.messages.slice(-6).map(m => ({
-                    role: m.role === 'user' ? 'user' : 'assistant',
-                    content: m.content
-                }));
-
-                const response = await callLLM([
-                    { role: 'system', content: systemPrompt },
-                    ...history,
-                    { role: 'user', content: msg }
-                ]);
-
-                removeTypingIndicator(tid);
-                addMessage('ai', response, sources);
-
-                if (sources.length) document.getElementById('sourceBtn').style.display = 'inline-flex';
-
-                state.messages.push(
-                    { role: 'user', content: msg },
-                    { role: 'ai',   content: response }
-                );
-            } catch(e) {
-                removeTypingIndicator(tid);
-                addMessage('ai', `❌ **Erro:** ${e.message}`);
-                showToast(e.message, 'error');
-            }
-
-            state.isProcessing = false;
-            updateSendButton();
-        }
-
-        // ── Chat rendering ─────────────────────────────────────────────────────
-        function addMessage(role, content, sources = []) {
-            const c   = document.getElementById('messagesContainer');
-            const div = document.createElement('div');
-            div.className = `message ${role}`;
-            const av = role === 'ai' ? '🧠' : '👤';
-            let srcHTML = '';
-            if (sources?.length) {
-                const uniqueDocs = [...new Set(sources.map(s => s.docName))];
-                srcHTML = `<div class="sources">${uniqueDocs.map(d => `<span class="source-tag">📄 ${d}</span>`).join('')}</div>`;
-            }
-            div.innerHTML = `
-                <div class="message-avatar">${av}</div>
-                <div class="message-content">
-                    <div class="message-bubble">${formatMarkdown(content)}</div>
-                    ${srcHTML}
-                </div>`;
-            c.appendChild(div);
-            c.scrollTop = c.scrollHeight;
-        }
-
-        function addTypingIndicator() {
-            const c  = document.getElementById('messagesContainer');
-            const id = 't-' + Date.now();
-            const div = document.createElement('div');
-            div.className = 'message ai';
-            div.id = id;
-            div.innerHTML = `
-                <div class="message-avatar">🧠</div>
-                <div class="message-content">
-                    <div class="message-bubble">
-                        <div class="typing-indicator">
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                        </div>
-                    </div>
-                </div>`;
-            c.appendChild(div);
-            c.scrollTop = c.scrollHeight;
-            return id;
-        }
-
-        function removeTypingIndicator(id) {
-            document.getElementById(id)?.remove();
-        }
-
-        function formatMarkdown(t) {
-            t = t.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-            t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
-            t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            t = t.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
-            return `<p>${t}</p>`;
-        }
-
-        // ── UI helpers ─────────────────────────────────────────────────────────
-        function handleKeyDown(e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-        }
-        function autoResize(t) {
-            t.style.height = 'auto';
-            t.style.height = Math.min(t.scrollHeight, 120) + 'px';
-        }
-        function updateSendButton() {
-            document.getElementById('sendBtn').disabled = state.isProcessing;
-        }
-        function updateStats() {
-            document.getElementById('statChunks').textContent = state.allChunks.length;
-            document.getElementById('statPages').textContent  = state.documents.reduce((s, d) => s + d.pages, 0);
-            document.getElementById('statsBar').style.display = state.documents.length ? 'flex' : 'none';
-        }
-        function updateGlobalStatus() {
-            const st = document.getElementById('globalStatus');
-            if (!state.currentSubject) {
-                st.className = 'status-badge idle';
-                st.innerHTML = '<span style="width:6px;height:6px;background:var(--text-muted);border-radius:50%;display:inline-block;"></span> Selecione um assunto';
-            } else if (state.isProcessing) {
-                st.className = 'status-badge processing';
-                st.innerHTML = '<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Carregando...';
-            } else if (!state.documents.length) {
-                st.className = 'status-badge processing';
-                st.innerHTML = `<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Sem documentos`;
-            } else {
-                st.className = 'status-badge ready';
-                st.innerHTML = `<span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;"></span> 📚 ${state.currentSubject}`;
-            }
-        }
-        function toggleSourcePanel() {
-            const p = document.getElementById('sourcePanel');
-            p.classList.toggle('active');
-            if (p.classList.contains('active') && state.lastSources.length) renderSourcePanel(state.lastSources);
-        }
-        function renderSourcePanel(sources) {
-            document.getElementById('sourcePanelContent').innerHTML = sources.map(s => `
-                <div class="source-chunk">
-                    <div class="source-chunk-header">
-                        <span class="source-chunk-source">📄 ${s.docName}</span>
-                        <span class="source-chunk-relevance">Score: ${(s.score || 0).toFixed(1)}</span>
-                    </div>
-                    <div class="source-chunk-text">${s.text.substring(0, 300)}...</div>
-                </div>`).join('');
-        }
-        function showLoading(t) {
-            document.getElementById('loadingText').textContent = t;
-            document.getElementById('loadingOverlay').classList.add('active');
-        }
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.remove('active');
-        }
-        function showToast(m, t = 'info') {
-            const c = document.getElementById('toastContainer');
-            const d = document.createElement('div');
-            d.className = `toast ${t}`;
-            const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
-            d.innerHTML = `<span>${icons[t] || 'ℹ️'}</span> ${m}`;
-            c.appendChild(d);
-            setTimeout(() => {
-                d.style.opacity = '0'; d.style.transform = 'translateX(50px)'; d.style.transition = 'all .3s';
-                setTimeout(() => d.remove(), 300);
-            }, 4000);
-        }
-    </script>
+function toast(msg, type='info') {
+  const c = document.getElementById('toasts');
+  const d = document.createElement('div');
+  d.className=`toast ${type}`;
+  const icons={ok:'✅',err:'❌',info:'ℹ️',warn:'⚠️'};
+  d.innerHTML=`<span>${icons[type]||'ℹ️'}</span> ${msg}`;
+  c.appendChild(d);
+  setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateX(44px)'; d.style.transition='all .28s'; setTimeout(()=>d.remove(),300); }, 4500);
+}
+</script>
 </body>
 </html>
