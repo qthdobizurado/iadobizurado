@@ -386,44 +386,130 @@
         }
 
         // ── Search & context ───────────────────────────────────────────────────
-        function searchChunks(query, topK = 4) {   // ← reduced from 5 to 4 to save tokens
-            const terms = query.toLowerCase().replace(/[^\w\sàáâãéêíóôõúüç]/gi, '').split(/\s+/).filter(w => w.length > 2);
-            if (!terms.length) return [];
-            return state.allChunks.map(c => {
-                const t = c.text.toLowerCase(); let s = 0;
-                if (t.includes(query.toLowerCase())) s += 50;
-                for (const term of terms) {
-                    const m = t.match(new RegExp(term, 'gi')); if (m) s += m.length * 5;
-                    for (let l = term.length; l >= 4; l--) if (t.includes(term.substring(0, l))) { s += 1; break; }
-                }
-                s += (s / c.text.length) * 20;
-                return { ...c, score: s };
-            }).filter(c => c.score > 0).sort((a, b) => b.score - a.score).slice(0, topK);
+
+        // Expande a query com sinônimos e variações comuns em português
+        function expandQuery(query) {
+            const synonyms = {
+                'praça': ['praças', 'soldado', 'cabo', 'sargento', 'subtenente', 'graduado', 'graduados', 'sd', 'cb', 'st'],
+                'praças': ['praça', 'soldado', 'cabo', 'sargento', 'subtenente', 'graduado', 'graduados'],
+                'medalha': ['medalhas', 'condecoração', 'condecorações', 'distinção', 'distinções', 'honraria'],
+                'medalhas': ['medalha', 'condecoração', 'condecorações'],
+                'ponto': ['pontos', 'pontuação', 'pontuações', 'crédito', 'créditos', 'escore'],
+                'pontos': ['ponto', 'pontuação', 'crédito'],
+                'valem': ['vale', 'equivale', 'corresponde', 'contam', 'conta', 'pontuam', 'pontua'],
+                'valer': ['vale', 'equivale', 'pontuar'],
+                'promoção': ['promoções', 'promovido', 'promover', 'ascensão'],
+                'curso': ['cursos', 'formação', 'treinamento', 'capacitação'],
+                'oficial': ['oficiais', 'tenente', 'capitão', 'major', 'coronel'],
+                'bombeiro': ['bombeiros', 'cbm', 'corpo de bombeiros'],
+                'militar': ['militares', 'efetivo', 'efetivos'],
+            };
+            const terms = new Set(
+                query.toLowerCase()
+                     .replace(/[^\w\sàáâãéêíóôõúüç]/gi, ' ')
+                     .split(/\s+/)
+                     .filter(w => w.length > 2)
+            );
+            for (const t of [...terms]) {
+                if (synonyms[t]) synonyms[t].forEach(s => terms.add(s));
+            }
+            return [...terms];
         }
 
-        function buildContext(query) {
-            const rel = searchChunks(query, 4);
-            // Expand with immediate neighbours but cap total context to avoid 413
-            const MAX_CONTEXT_CHARS = 6000;  // ← hard cap to stay under Groq token limit
-            const seen  = new Set();
-            const texts = [];
-            let total   = 0;
-
-            for (const chunk of rel) {
-                const dc  = state.allChunks.filter(c => c.docId === chunk.docId);
-                const idx = dc.findIndex(c => c.text === chunk.text);
-                const candidates = [dc[idx - 1], dc[idx], dc[idx + 1]].filter(Boolean);
-                for (const cand of candidates) {
-                    if (seen.has(cand.text)) continue;
-                    if (total + cand.text.length > MAX_CONTEXT_CHARS) continue;
-                    seen.add(cand.text);
-                    texts.push(cand.text);
-                    total += cand.text.length;
+        // Score de relevância de um chunk dado um conjunto de termos
+        function scoreChunk(chunkText, queryLower, terms) {
+            const t = chunkText.toLowerCase();
+            let s = 0;
+            // Frase exata tem peso altíssimo
+            if (t.includes(queryLower)) s += 100;
+            for (const term of terms) {
+                // Ocorrências exatas
+                const m = t.match(new RegExp('\\b' + term + '\\b', 'gi'));
+                if (m) s += m.length * 8;
+                // Ocorrências parciais (prefixo de 4+ chars)
+                for (let l = Math.min(term.length, 8); l >= 4; l--) {
+                    if (t.includes(term.substring(0, l))) { s += 2; break; }
                 }
-                if (total >= MAX_CONTEXT_CHARS) break;
+            }
+            // Bônus: densidade (muitos termos em pouco texto = mais relevante)
+            if (s > 0) s += (s / chunkText.length) * 50;
+            return s;
+        }
+
+        // Busca multi-passagem: passa 1 com query completa, passa 2 com termos individuais
+        function searchChunks(query, topK = 10) {
+            const queryLower = query.toLowerCase().replace(/[^\w\sàáâãéêíóôõúüç]/gi, ' ').trim();
+            const terms      = expandQuery(query);
+
+            if (!terms.length) return [];
+
+            // Passa 1: score completo
+            const scored = state.allChunks.map(c => ({
+                ...c,
+                score: scoreChunk(c.text, queryLower, terms)
+            })).filter(c => c.score > 0);
+
+            // Passa 2: fallback — se menos de 3 resultados, busca apenas os termos mais relevantes (>3 chars)
+            if (scored.length < 3) {
+                const keyTerms = terms.filter(t => t.length > 3);
+                const fallback = state.allChunks.map(c => {
+                    const t = c.text.toLowerCase();
+                    let s = 0;
+                    for (const term of keyTerms) if (t.includes(term)) s += 5;
+                    return { ...c, score: s };
+                }).filter(c => c.score > 0 && !scored.find(x => x.text === c.text));
+                scored.push(...fallback);
             }
 
-            return { context: texts.join('\n\n---\n\n'), sources: rel };
+            return scored.sort((a, b) => b.score - a.score).slice(0, topK);
+        }
+
+        // Monta o contexto garantindo diversidade de documentos e sem estourar tokens
+        function buildContext(query) {
+            const rel = searchChunks(query, 10);
+
+            const MAX_CONTEXT_CHARS = 7500; // ~1875 tokens de contexto
+            const MAX_CHUNK_CHARS   = 600;  // cada chunk truncado individualmente
+            const seen   = new Set();
+            const texts  = [];
+            let   total  = 0;
+
+            // Índice por docId para expansão de vizinhos
+            const chunksByDoc = {};
+            for (const c of state.allChunks) {
+                if (!chunksByDoc[c.docId]) chunksByDoc[c.docId] = [];
+                chunksByDoc[c.docId].push(c);
+            }
+
+            for (const chunk of rel) {
+                if (total >= MAX_CONTEXT_CHARS) break;
+                const dc  = chunksByDoc[chunk.docId] || [];
+                const idx = dc.findIndex(c => c.text === chunk.text);
+
+                // Inclui o chunk principal + vizinhos imediatos
+                const candidates = [dc[idx], dc[idx + 1]].filter(Boolean);
+
+                for (const cand of candidates) {
+                    if (seen.has(cand.text)) continue;
+                    seen.add(cand.text);
+                    const excerpt = cand.text.length > MAX_CHUNK_CHARS
+                        ? cand.text.substring(0, MAX_CHUNK_CHARS) + '…'
+                        : cand.text;
+                    texts.push(`[${cand.docName}]\n${excerpt}`);
+                    total += excerpt.length;
+                    if (total >= MAX_CONTEXT_CHARS) break;
+                }
+            }
+
+            // Se nada foi encontrado, avisa explicitamente
+            if (!texts.length) {
+                return {
+                    context: '(Nenhum trecho relevante encontrado nos documentos para esta pergunta.)',
+                    sources: []
+                };
+            }
+
+            return { context: texts.join('\n\n---\n\n'), sources: rel.slice(0, 6) };
         }
 
         // ── LLM call ───────────────────────────────────────────────────────────
@@ -473,12 +559,18 @@
                 const { context, sources } = buildContext(msg);
                 state.lastSources = sources;
 
-                // System prompt — kept brief to save tokens
+                // System prompt
                 const systemPrompt =
-                    `Você é um analisador de documentos. Responda APENAS com base nos trechos abaixo.\n` +
-                    `Se a resposta não estiver no contexto, diga: "Não encontrei essa informação nos documentos."\n` +
-                    `Cite a fonte entre parênteses, ex: (Fonte: arquivo.pdf). Seja conciso.\n\n` +
-                    `CONTEXTO [${state.currentSubject}]:\n${context}`;
+                    `Você é um especialista em análise de documentos militares/oficiais em português.\n` +
+                    `Responda usando EXCLUSIVAMENTE os trechos abaixo.\n\n` +
+                    `REGRAS:\n` +
+                    `1. Leia TODOS os trechos antes de responder.\n` +
+                    `2. Procure termos relacionados: "praça" pode aparecer como "graduado","SD","CB","ST","sargento" etc.\n` +
+                    `3. Se informação for parcial, apresente-a e explique a relação.\n` +
+                    `4. Cite a fonte: [nome_arquivo.pdf].\n` +
+                    `5. Diga "não encontrei" SOMENTE se nenhum trecho tiver qualquer dado relevante.\n` +
+                    `6. Use listas quando houver múltiplos itens.\n\n` +
+                    `TRECHOS [${state.currentSubject}]:\n${context}`;
 
                 // Keep only last 3 exchanges to save tokens
                 const history = state.messages.slice(-6).map(m => ({
