@@ -116,7 +116,7 @@
         .loading-text { font-size: 16px; color: var(--text-secondary); }
         .toast-container { position: fixed; top: 90px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
         .toast { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 20px; font-size: 14px; display: flex; align-items: center; gap: 10px; animation: toastIn 0.3s ease; min-width: 280px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); }
-        .toast.success { border-left: 3px solid var(--success); } .toast.error { border-left: 3px solid var(--danger); } .toast.info { border-left: 3px solid var(--accent); }
+        .toast.success { border-left: 3px solid var(--success); } .toast.error { border-left: 3px solid var(--danger); } .toast.info { border-left: 3px solid var(--accent); } .toast.warning { border-left: 3px solid var(--warning); }
         @keyframes toastIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
         .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
@@ -215,6 +215,7 @@
             messages: [],
             isProcessing: false,
             lastSources: [],
+            subjectsData: {}, // ✅ Armazena os assuntos globalmente
             settings: { apiKey: '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' }
         };
 
@@ -244,8 +245,8 @@
             try {
                 const res = await fetch('pdf/subjects.json');
                 if (!res.ok) throw new Error('Arquivo não encontrado');
-                const subjects = await res.json();
-                renderSubjectList(subjects);
+                state.subjectsData = await res.json();
+                renderSubjectList(state.subjectsData);
             } catch(e) {
                 document.getElementById('subjectList').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Crie o arquivo <code>pdf/subjects.json</code> no repositório.</p></div>`;
                 showToast('Erro ao carregar lista de assuntos.', 'error');
@@ -254,12 +255,12 @@
 
         function renderSubjectList(subjects) {
             const list = document.getElementById('subjectList');
-            if (Object.keys(subjects).length === 0) {
+            if (!subjects || Object.keys(subjects).length === 0) {
                 list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum assunto configurado.</p></div>`;
                 return;
             }
             list.innerHTML = Object.entries(subjects).map(([name, files]) => `
-                <div class="subject-item" onclick="selectSubject('${name}', this)">
+                <div class="subject-item" onclick="selectSubject('${name.replace(/'/g, "\\'")}', this)">
                     <div class="subject-icon">📚</div>
                     <div class="subject-info">
                         <div class="subject-name">${name}</div>
@@ -270,18 +271,23 @@
         }
 
         async function selectSubject(name, el) {
+            if (state.isProcessing) return;
             document.querySelectorAll('.subject-item').forEach(e => e.classList.remove('active'));
             if (el) el.classList.add('active');
+            
             state.currentSubject = name;
-            state.documents = []; state.allChunks = []; state.messages = [];
-            renderSubjectList({}); // Clear chat area visually if needed
-            updateStats(); updateGlobalStatus();
+            state.documents = []; 
+            state.allChunks = []; 
+            state.messages = [];
+            state.lastSources = [];
+            document.getElementById('messagesContainer').innerHTML = '';
+            document.getElementById('welcomeScreen').style.display = 'flex';
+            updateStats(); 
+            updateGlobalStatus();
 
             showLoading(`Carregando "${name}"...`);
             const pdfFolder = `pdf/${encodeURIComponent(name)}/`;
-            const res = await fetch('pdf/subjects.json');
-            const subjects = await res.json();
-            const files = subjects[name] || [];
+            const files = state.subjectsData[name] || [];
 
             let loaded = 0;
             for (let i = 0; i < files.length; i++) {
@@ -291,7 +297,8 @@
                     if (response.ok && await loadPDFFromBlob(await response.blob(), files[i])) loaded++;
                 } catch(e) { console.warn(`⚠️ Falha: ${files[i]}`, e); }
             }
-            hideLoading(); updateGlobalStatus();
+            hideLoading(); 
+            updateGlobalStatus();
             document.getElementById('welcomeScreen').style.display = loaded > 0 ? 'none' : 'flex';
             showToast(`✅ "${name}" carregado (${loaded} PDFs)`, loaded > 0 ? 'success' : 'error');
         }
@@ -349,24 +356,39 @@
                 if (idx > 0) expanded.add(dc[idx-1].text);
                 if (idx < dc.length-1) expanded.add(dc[idx+1].text);
             }
-            return { context: Array.from(expanded).join('\n\n---\n\n'), sources: rel };
+            
+            let context = Array.from(expanded).join('\n\n---\n\n');
+            // ✅ Limitador de tamanho para evitar Erro 413 (Payload Too Large)
+            const MAX_CHARS = 20000; 
+            if (context.length > MAX_CHARS) {
+                context = context.substring(0, MAX_CHARS) + '\n\n...[Contexto otimizado para caber no limite da API]';
+            }
+            return { context, sources: rel };
         }
 
         async function callLLM(messages) {
             const { apiKey } = state.settings;
             if (!apiKey?.startsWith('gsk_')) throw new Error('API Key inválida.');
+            
             const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                method: 'POST', 
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.2, max_tokens: 1500 })
             });
-            if (!res.ok) throw new Error(`Groq (${res.status})`);
+            
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Groq (${res.status})${res.status === 413 ? ': Contexto muito grande. Tente perguntas mais específicas.' : ''}`);
+            }
             return (await res.json()).choices[0].message.content;
         }
 
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const msg = input.value.trim();
-            if (!msg || state.isProcessing || !state.currentSubject) return showToast('Selecione um assunto primeiro.', 'warning');
+            if (!msg || state.isProcessing) return;
+            if (!state.currentSubject) return showToast('Selecione um assunto primeiro.', 'warning');
+            if (state.documents.length === 0) return showToast('Aguarde o carregamento dos documentos.', 'warning');
 
             input.value = ''; autoResize(input);
             document.getElementById('welcomeScreen').style.display = 'none';
@@ -447,7 +469,8 @@ CONTEXTO (${state.currentSubject}):\n${context}`;
         function hideLoading(){document.getElementById('loadingOverlay').classList.remove('active');}
         function showToast(m,t='info'){
             const c=document.getElementById('toastContainer'),d=document.createElement('div');d.className=`toast ${t}`;
-            d.innerHTML=`<span>${{success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'}[t]}</span> ${m}`;c.appendChild(d);
+            const icons = {success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
+            d.innerHTML=`<span>${icons[t]||'ℹ️'}</span> ${m}`;c.appendChild(d);
             setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(50px)';d.style.transition='all .3s';setTimeout(()=>d.remove(),300)},4000);
         }
     </script>
