@@ -30,7 +30,7 @@
         .btn-secondary:hover { border-color: var(--accent); background: rgba(124, 92, 252, 0.1); }
         .btn-ghost { background: transparent; color: var(--text-secondary); padding: 8px 12px; }
         .main-container { display: flex; height: calc(100vh - 73px); position: relative; z-index: 1; }
-        .sidebar { width: 320px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar { width: 320px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
         .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
         .sidebar-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
         .stats-bar { display: flex; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
@@ -40,11 +40,12 @@
         .subject-item { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; margin-bottom: 6px; border: 1px solid transparent; }
         .subject-item:hover { background: var(--bg-tertiary); border-color: var(--border); }
         .subject-item.active { background: rgba(124, 92, 252, 0.1); border-color: var(--accent); }
+        .subject-item.loading-item { opacity: 0.6; pointer-events: none; }
         .subject-icon { width: 42px; height: 42px; background: var(--gradient-2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
         .subject-info { flex: 1; min-width: 0; }
         .subject-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .subject-count { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
         .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
         .welcome-icon { width: 80px; height: 80px; background: var(--gradient-2); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 24px; box-shadow: 0 8px 30px var(--accent-glow); animation: float 3s ease-in-out infinite; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -208,9 +209,10 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+        // ── State ──────────────────────────────────────────────────────────────
         let state = {
-            subjectsData: {}, // 🆕 Guarda a lista de assuntos carregada
             currentSubject: null,
+            subjectsCache: {},          // stores full subjects map so we can re-render sidebar anytime
             documents: [],
             allChunks: [],
             messages: [],
@@ -219,12 +221,13 @@
             settings: { apiKey: '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' }
         };
 
+        // ── Init ───────────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             loadSettings();
-            document.getElementById('apiKeyInput').value = state.settings.apiKey;
             loadSubjectsList();
         });
 
+        // ── Settings ───────────────────────────────────────────────────────────
         function loadSettings() {
             const saved = localStorage.getItem('notebookai_settings');
             if (saved) { try { state.settings = { ...state.settings, ...JSON.parse(saved) }; } catch(e) {} }
@@ -241,72 +244,111 @@
         function openSettingsModal() { document.getElementById('settingsModal').classList.add('active'); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); }
 
+        // ── Load subjects list ─────────────────────────────────────────────────
         async function loadSubjectsList() {
             try {
                 const res = await fetch('pdf/subjects.json');
                 if (!res.ok) throw new Error('Arquivo não encontrado');
-                state.subjectsData = await res.json();
-                renderSubjectList();
+                const subjects = await res.json();
+                state.subjectsCache = subjects;    // ← cache for later re-renders
+                renderSubjectList(subjects);
             } catch(e) {
-                document.getElementById('subjectList').innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Crie o arquivo <code>pdf/subjects.json</code> no repositório.</p></div>`;
+                document.getElementById('subjectList').innerHTML =
+                    `<div class="empty-state"><div class="icon">⚠️</div><p>Crie o arquivo <code>pdf/subjects.json</code> no repositório.</p></div>`;
                 showToast('Erro ao carregar lista de assuntos.', 'error');
             }
         }
 
-        // ✅ CORRIGIDO: Não apaga a lista ao selecionar
-        function renderSubjectList() {
+        // ── Render sidebar list ────────────────────────────────────────────────
+        // Always uses the cached map; marks the active item correctly.
+        function renderSubjectList(subjects) {
             const list = document.getElementById('subjectList');
-            const subjects = state.subjectsData;
             if (!subjects || Object.keys(subjects).length === 0) {
                 list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum assunto configurado.</p></div>`;
                 return;
             }
-            list.innerHTML = Object.entries(subjects).map(([name, files]) => `
-                <div class="subject-item ${state.currentSubject === name ? 'active' : ''}" onclick="selectSubject(\`${name}\`)">
-                    <div class="subject-icon">📚</div>
+            list.innerHTML = Object.entries(subjects).map(([name, files]) => {
+                const isActive   = name === state.currentSubject;
+                const isLoading  = name === state.currentSubject && state.isProcessing;
+                return `
+                <div class="subject-item${isActive ? ' active' : ''}${isLoading ? ' loading-item' : ''}"
+                     onclick="selectSubject('${name.replace(/'/g, "\\'")}', this)"
+                     data-subject="${name.replace(/"/g, '&quot;')}">
+                    <div class="subject-icon">${isLoading ? '⏳' : '📚'}</div>
                     <div class="subject-info">
                         <div class="subject-name">${name}</div>
                         <div class="subject-count">${files.length} documento(s)</div>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
-        // ✅ CORRIGIDO: Lógica de seleção limpa e segura
+        // ── Select a subject ───────────────────────────────────────────────────
         async function selectSubject(name) {
-            if (state.isProcessing) return showToast('Aguarde o carregamento atual.', 'warning');
+            if (state.isProcessing) return;                     // ignore clicks while loading
+
+            // Visual: mark active & start loading state
             state.currentSubject = name;
-            state.documents = []; state.allChunks = []; state.messages = [];
-            renderSubjectList(); // Apenas atualiza a classe 'active'
-            updateStats(); updateGlobalStatus();
-            
-            document.getElementById('welcomeScreen').style.display = 'flex';
-            document.querySelector('.welcome-icon').textContent = '⏳';
-            document.querySelector('.welcome-title').textContent = 'Carregando documentos...';
-            document.querySelector('.welcome-desc').textContent = 'Processando PDFs para o assunto selecionado.';
+            state.isProcessing   = true;
+            renderSubjectList(state.subjectsCache);             // re-render with active + loading-item
+
+            // Reset content
+            state.documents  = [];
+            state.allChunks  = [];
+            state.messages   = [];
+            state.lastSources = [];
+            clearChatArea();
+            updateStats();
+            updateGlobalStatus();
+            document.getElementById('sourceBtn').style.display = 'none';
 
             showLoading(`Carregando "${name}"...`);
+
+            const files = state.subjectsCache[name] || [];
             const pdfFolder = `pdf/${encodeURIComponent(name)}/`;
-            const files = state.subjectsData[name] || [];
             let loaded = 0;
 
             for (let i = 0; i < files.length; i++) {
-                showLoading(`Processando ${i+1}/${files.length}: ${files[i]}`);
+                showLoading(`Processando ${i + 1}/${files.length}: ${files[i]}`);
                 try {
                     const response = await fetch(pdfFolder + files[i]);
-                    if (response.ok && await loadPDFFromBlob(await response.blob(), files[i])) loaded++;
-                } catch(e) { console.warn(`⚠️ Falha: ${files[i]}`, e); }
+                    if (response.ok) {
+                        const ok = await loadPDFFromBlob(await response.blob(), files[i]);
+                        if (ok) loaded++;
+                    } else {
+                        console.warn(`⚠️ HTTP ${response.status}: ${files[i]}`);
+                    }
+                } catch(e) {
+                    console.warn(`⚠️ Falha ao buscar: ${files[i]}`, e);
+                }
             }
-            hideLoading(); updateGlobalStatus();
-            
-            if (loaded > 0) {
-                document.getElementById('welcomeScreen').style.display = 'none';
-                showToast(`✅ "${name}" pronto (${loaded} PDFs)`, 'success');
-            } else {
-                showToast(`❌ Falha ao carregar "${name}"`, 'error');
-            }
+
+            state.isProcessing = false;
+            hideLoading();
+            renderSubjectList(state.subjectsCache);             // re-render without loading-item
+            updateStats();
+            updateGlobalStatus();
+
+            const ws = document.getElementById('welcomeScreen');
+            ws.style.display = loaded > 0 ? 'none' : 'flex';
+
+            showToast(
+                loaded > 0 ? `✅ "${name}" carregado (${loaded} PDF${loaded > 1 ? 's' : ''})` : `⚠️ Nenhum PDF carregado para "${name}"`,
+                loaded > 0 ? 'success' : 'error'
+            );
         }
 
+        // ── Clear chat (keep welcome screen) ──────────────────────────────────
+        function clearChatArea() {
+            const c = document.getElementById('messagesContainer');
+            // Remove all messages but keep #welcomeScreen
+            Array.from(c.children).forEach(child => {
+                if (child.id !== 'welcomeScreen') child.remove();
+            });
+            document.getElementById('welcomeScreen').style.display = 'flex';
+        }
+
+        // ── PDF loading & chunking ─────────────────────────────────────────────
         async function loadPDFFromBlob(inputData, name) {
             try {
                 let arrayBuffer = inputData instanceof ArrayBuffer ? inputData : await inputData.arrayBuffer();
@@ -316,27 +358,35 @@
                     const content = await pdf.getPage(i).then(p => p.getTextContent());
                     fullText += content.items.map(item => item.str).join(' ') + '\n\n';
                 }
-                const chunks = chunkText(fullText, name, 300, 60); // ✅ Chunks um pouco menores para evitar payload excessivo
+                const chunks = chunkText(fullText, name, 350, 80);
                 const docId = Date.now() + Math.random();
                 state.documents.push({ id: docId, name, text: fullText, chunks, pages: pdf.numPages, wordCount: fullText.split(/\s+/).length });
                 state.allChunks.push(...chunks.map(c => ({ ...c, docId, docName: name })));
-                updateStats(); return true;
-            } catch (e) { showToast(`Erro em ${name}: ${e.message}`, 'error'); return false; }
+                updateStats();
+                return true;
+            } catch (e) {
+                showToast(`Erro em ${name}: ${e.message}`, 'error');
+                return false;
+            }
         }
 
-        function chunkText(text, docName, chunkSize = 300, overlap = 60) {
-            const words = text.split(/\s+/); const chunks = []; let i = 0;
+        function chunkText(text, docName, chunkSize = 350, overlap = 80) {
+            const words = text.split(/\s+/);
+            const chunks = [];
+            let i = 0;
             while (i < words.length) {
                 const end = Math.min(i + chunkSize, words.length);
-                let chunkText = words.slice(i, end).join(' ');
-                const lp = chunkText.lastIndexOf('.');
-                if (lp > chunkSize * 0.5) chunkText = chunkText.substring(0, lp + 1);
-                chunks.push({ text: chunkText, docName, startIndex: i, endIndex: end });
+                let chunk = words.slice(i, end).join(' ');
+                const lp = chunk.lastIndexOf('.');
+                if (lp > chunkSize * 0.5) chunk = chunk.substring(0, lp + 1);
+                chunks.push({ text: chunk, docName, startIndex: i, endIndex: end });
                 i += chunkSize - overlap;
-            } return chunks;
+            }
+            return chunks;
         }
 
-        function searchChunks(query, topK = 3) { // ✅ Reduzido para 3 para evitar payload 413
+        // ── Search & context ───────────────────────────────────────────────────
+        function searchChunks(query, topK = 4) {   // ← reduced from 5 to 4 to save tokens
             const terms = query.toLowerCase().replace(/[^\w\sàáâãéêíóôõúüç]/gi, '').split(/\s+/).filter(w => w.length > 2);
             if (!terms.length) return [];
             return state.allChunks.map(c => {
@@ -346,128 +396,241 @@
                     const m = t.match(new RegExp(term, 'gi')); if (m) s += m.length * 5;
                     for (let l = term.length; l >= 4; l--) if (t.includes(term.substring(0, l))) { s += 1; break; }
                 }
-                s += (s / c.text.length) * 20; return { ...c, score: s };
+                s += (s / c.text.length) * 20;
+                return { ...c, score: s };
             }).filter(c => c.score > 0).sort((a, b) => b.score - a.score).slice(0, topK);
         }
 
-        // ✅ CORRIGIDO: Limite rígido de contexto para evitar erro 413 (Payload Too Large)
         function buildContext(query) {
-            const rel = searchChunks(query, 3);
-            const expanded = new Set();
+            const rel = searchChunks(query, 4);
+            // Expand with immediate neighbours but cap total context to avoid 413
+            const MAX_CONTEXT_CHARS = 6000;  // ← hard cap to stay under Groq token limit
+            const seen  = new Set();
+            const texts = [];
+            let total   = 0;
+
             for (const chunk of rel) {
-                expanded.add(chunk.text);
-                const dc = state.allChunks.filter(c => c.docId === chunk.docId);
+                const dc  = state.allChunks.filter(c => c.docId === chunk.docId);
                 const idx = dc.findIndex(c => c.text === chunk.text);
-                if (idx > 0) expanded.add(dc[idx-1].text);
-                if (idx < dc.length-1) expanded.add(dc[idx+1].text);
+                const candidates = [dc[idx - 1], dc[idx], dc[idx + 1]].filter(Boolean);
+                for (const cand of candidates) {
+                    if (seen.has(cand.text)) continue;
+                    if (total + cand.text.length > MAX_CONTEXT_CHARS) continue;
+                    seen.add(cand.text);
+                    texts.push(cand.text);
+                    total += cand.text.length;
+                }
+                if (total >= MAX_CONTEXT_CHARS) break;
             }
-            let context = Array.from(expanded).join('\n\n---\n\n');
-            // Limite seguro: ~10k tokens max no contexto
-            if (context.length > 40000) {
-                context = context.substring(0, 40000) + '\n\n[Contexto truncado para otimização...]';
-            }
-            return { context, sources: rel };
+
+            return { context: texts.join('\n\n---\n\n'), sources: rel };
         }
 
+        // ── LLM call ───────────────────────────────────────────────────────────
         async function callLLM(messages) {
             const { apiKey } = state.settings;
-            if (!apiKey?.startsWith('gsk_')) throw new Error('API Key inválida.');
+            if (!apiKey?.startsWith('gsk_')) throw new Error('API Key inválida. Configure em ⚙️ API Key.');
+
             const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.2, max_tokens: 1200 })
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages,
+                    temperature: 0.2,
+                    max_tokens: 1024          // ← reduced to leave room for input
+                })
             });
-            if (!res.ok) throw new Error(`Groq (${res.status})`);
+
+            if (!res.ok) {
+                let errMsg = `Groq retornou status ${res.status}.`;
+                if (res.status === 413) errMsg = 'Contexto muito grande (413). Tente uma pergunta mais específica.';
+                if (res.status === 401) errMsg = 'API Key inválida ou expirada (401).';
+                if (res.status === 429) errMsg = 'Limite de requisições atingido (429). Aguarde um momento.';
+                throw new Error(errMsg);
+            }
             return (await res.json()).choices[0].message.content;
         }
 
+        // ── Send message ───────────────────────────────────────────────────────
         async function sendMessage() {
             const input = document.getElementById('chatInput');
-            const msg = input.value.trim();
+            const msg   = input.value.trim();
             if (!msg || state.isProcessing) return;
             if (!state.currentSubject) return showToast('Selecione um assunto primeiro.', 'warning');
-            if (state.documents.length === 0) return showToast('Aguarde o carregamento dos PDFs.', 'warning');
+            if (!state.documents.length) return showToast('Aguarde o carregamento dos documentos.', 'warning');
 
-            input.value = ''; autoResize(input);
+            input.value = '';
+            autoResize(input);
             document.getElementById('welcomeScreen').style.display = 'none';
             addMessage('user', msg);
-            state.isProcessing = true; updateSendButton();
+
+            state.isProcessing = true;
+            updateSendButton();
             const tid = addTypingIndicator();
 
             try {
                 const { context, sources } = buildContext(msg);
                 state.lastSources = sources;
-                const prompt = `Você é um analisador estrito de documentos. Responda APENAS com base nos trechos fornecidos.
-REGRAS: 1. Se não estiver no contexto, diga exatamente: "Não encontrei essa informação nos documentos fornecidos."
-2. Cite a fonte entre parênteses. Ex: (Fonte: documento.pdf)
-3. Não use conhecimento externo. Mantenha conciso e estruturado.
-CONTEXTO (${state.currentSubject}):\n${context}`;
+
+                // System prompt — kept brief to save tokens
+                const systemPrompt =
+                    `Você é um analisador de documentos. Responda APENAS com base nos trechos abaixo.\n` +
+                    `Se a resposta não estiver no contexto, diga: "Não encontrei essa informação nos documentos."\n` +
+                    `Cite a fonte entre parênteses, ex: (Fonte: arquivo.pdf). Seja conciso.\n\n` +
+                    `CONTEXTO [${state.currentSubject}]:\n${context}`;
+
+                // Keep only last 3 exchanges to save tokens
+                const history = state.messages.slice(-6).map(m => ({
+                    role: m.role === 'user' ? 'user' : 'assistant',
+                    content: m.content
+                }));
 
                 const response = await callLLM([
-                    { role: 'system', content: prompt },
-                    ...state.messages.slice(-4).map(m => ({ role: m.role==='user'?'user':'assistant', content: m.content })),
+                    { role: 'system', content: systemPrompt },
+                    ...history,
                     { role: 'user', content: msg }
                 ]);
+
                 removeTypingIndicator(tid);
                 addMessage('ai', response, sources);
+
                 if (sources.length) document.getElementById('sourceBtn').style.display = 'inline-flex';
-                state.messages.push({ role: 'user', content: msg }, { role: 'ai', content: response });
+
+                state.messages.push(
+                    { role: 'user', content: msg },
+                    { role: 'ai',   content: response }
+                );
             } catch(e) {
                 removeTypingIndicator(tid);
-                addMessage('ai', `❌ **Erro:** ${e.message}\n💡 Dica: Se for 413, reduza o tamanho da sua pergunta ou aguarde.`);
+                addMessage('ai', `❌ **Erro:** ${e.message}`);
+                showToast(e.message, 'error');
             }
-            state.isProcessing = false; updateSendButton();
+
+            state.isProcessing = false;
+            updateSendButton();
         }
 
+        // ── Chat rendering ─────────────────────────────────────────────────────
         function addMessage(role, content, sources = []) {
-            const c = document.getElementById('messagesContainer');
-            const div = document.createElement('div'); div.className = `message ${role}`;
-            const av = role==='ai'?'🧠':'👤';
+            const c   = document.getElementById('messagesContainer');
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            const av = role === 'ai' ? '🧠' : '👤';
             let srcHTML = '';
-            if (sources?.length) srcHTML = `<div class="sources">${[...new Set(sources.map(s=>s.docName))].map(d=>`<span class="source-tag">📄 ${d}</span>`).join('')}</div>`;
-            div.innerHTML = `<div class="message-avatar">${av}</div><div class="message-content"><div class="message-bubble">${formatMarkdown(content)}</div>${srcHTML}</div>`;
-            c.appendChild(div); c.scrollTop = c.scrollHeight;
+            if (sources?.length) {
+                const uniqueDocs = [...new Set(sources.map(s => s.docName))];
+                srcHTML = `<div class="sources">${uniqueDocs.map(d => `<span class="source-tag">📄 ${d}</span>`).join('')}</div>`;
+            }
+            div.innerHTML = `
+                <div class="message-avatar">${av}</div>
+                <div class="message-content">
+                    <div class="message-bubble">${formatMarkdown(content)}</div>
+                    ${srcHTML}
+                </div>`;
+            c.appendChild(div);
+            c.scrollTop = c.scrollHeight;
         }
+
         function addTypingIndicator() {
-            const c = document.getElementById('messagesContainer'), id = 't-'+Date.now();
-            c.innerHTML += `<div class="message ai" id="${id}"><div class="message-avatar">🧠</div><div class="message-content"><div class="message-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>`;
-            c.scrollTop = c.scrollHeight; return id;
+            const c  = document.getElementById('messagesContainer');
+            const id = 't-' + Date.now();
+            const div = document.createElement('div');
+            div.className = 'message ai';
+            div.id = id;
+            div.innerHTML = `
+                <div class="message-avatar">🧠</div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                </div>`;
+            c.appendChild(div);
+            c.scrollTop = c.scrollHeight;
+            return id;
         }
-        function removeTypingIndicator(id) { document.getElementById(id)?.remove(); }
+
+        function removeTypingIndicator(id) {
+            document.getElementById(id)?.remove();
+        }
+
         function formatMarkdown(t) {
-            t=t.replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>');
-            t=t.replace(/`([^`]+)`/g,'<code>$1</code>');
-            t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-            t=t.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+            t = t.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+            t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+            t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            t = t.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
             return `<p>${t}</p>`;
         }
-        function handleKeyDown(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
-        function autoResize(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,120)+'px';}
-        function updateSendButton(){document.getElementById('sendBtn').disabled=state.isProcessing;}
-        function updateStats(){
-            document.getElementById('statChunks').textContent=state.allChunks.length;
-            document.getElementById('statPages').textContent=state.documents.reduce((s,d)=>s+d.pages,0);
-            document.getElementById('statsBar').style.display=state.documents.length?'flex':'none';
+
+        // ── UI helpers ─────────────────────────────────────────────────────────
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         }
-        function updateGlobalStatus(){
-            const st=document.getElementById('globalStatus');
-            if(!state.currentSubject){st.className='status-badge idle';st.innerHTML='<span style="width:6px;height:6px;background:var(--text-muted);border-radius:50%;display:inline-block;"></span> Selecione um assunto';}
-            else if(!state.documents.length){st.className='status-badge processing';st.innerHTML='<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Carregando...';}
-            else{st.className='status-badge ready';st.innerHTML=`<span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;"></span> 📚 ${state.currentSubject}`;}
+        function autoResize(t) {
+            t.style.height = 'auto';
+            t.style.height = Math.min(t.scrollHeight, 120) + 'px';
         }
-        function toggleSourcePanel(){
-            const p=document.getElementById('sourcePanel');p.classList.toggle('active');
-            if(p.classList.contains('active')&&state.lastSources.length) renderSourcePanel(state.lastSources);
+        function updateSendButton() {
+            document.getElementById('sendBtn').disabled = state.isProcessing;
         }
-        function renderSourcePanel(sources){
-            document.getElementById('sourcePanelContent').innerHTML=sources.map(s=>`
-                <div class="source-chunk"><div class="source-chunk-header"><span class="source-chunk-source">📄 ${s.docName}</span><span class="source-chunk-relevance">Score: ${(s.score||0).toFixed(1)}</span></div><div class="source-chunk-text">${s.text.substring(0,300)}...</div></div>`).join('');
+        function updateStats() {
+            document.getElementById('statChunks').textContent = state.allChunks.length;
+            document.getElementById('statPages').textContent  = state.documents.reduce((s, d) => s + d.pages, 0);
+            document.getElementById('statsBar').style.display = state.documents.length ? 'flex' : 'none';
         }
-        function showLoading(t){document.getElementById('loadingText').textContent=t;document.getElementById('loadingOverlay').classList.add('active');}
-        function hideLoading(){document.getElementById('loadingOverlay').classList.remove('active');}
-        function showToast(m,t='info'){
-            const c=document.getElementById('toastContainer'),d=document.createElement('div');d.className=`toast ${t}`;
-            d.innerHTML=`<span>${{success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'}[t]}</span> ${m}`;c.appendChild(d);
-            setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(50px)';d.style.transition='all .3s';setTimeout(()=>d.remove(),300)},4000);
+        function updateGlobalStatus() {
+            const st = document.getElementById('globalStatus');
+            if (!state.currentSubject) {
+                st.className = 'status-badge idle';
+                st.innerHTML = '<span style="width:6px;height:6px;background:var(--text-muted);border-radius:50%;display:inline-block;"></span> Selecione um assunto';
+            } else if (state.isProcessing) {
+                st.className = 'status-badge processing';
+                st.innerHTML = '<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Carregando...';
+            } else if (!state.documents.length) {
+                st.className = 'status-badge processing';
+                st.innerHTML = `<span style="width:6px;height:6px;background:var(--warning);border-radius:50%;display:inline-block;"></span> Sem documentos`;
+            } else {
+                st.className = 'status-badge ready';
+                st.innerHTML = `<span style="width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;"></span> 📚 ${state.currentSubject}`;
+            }
+        }
+        function toggleSourcePanel() {
+            const p = document.getElementById('sourcePanel');
+            p.classList.toggle('active');
+            if (p.classList.contains('active') && state.lastSources.length) renderSourcePanel(state.lastSources);
+        }
+        function renderSourcePanel(sources) {
+            document.getElementById('sourcePanelContent').innerHTML = sources.map(s => `
+                <div class="source-chunk">
+                    <div class="source-chunk-header">
+                        <span class="source-chunk-source">📄 ${s.docName}</span>
+                        <span class="source-chunk-relevance">Score: ${(s.score || 0).toFixed(1)}</span>
+                    </div>
+                    <div class="source-chunk-text">${s.text.substring(0, 300)}...</div>
+                </div>`).join('');
+        }
+        function showLoading(t) {
+            document.getElementById('loadingText').textContent = t;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+        function showToast(m, t = 'info') {
+            const c = document.getElementById('toastContainer');
+            const d = document.createElement('div');
+            d.className = `toast ${t}`;
+            const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+            d.innerHTML = `<span>${icons[t] || 'ℹ️'}</span> ${m}`;
+            c.appendChild(d);
+            setTimeout(() => {
+                d.style.opacity = '0'; d.style.transform = 'translateX(50px)'; d.style.transition = 'all .3s';
+                setTimeout(() => d.remove(), 300);
+            }, 4000);
         }
     </script>
 </body>
