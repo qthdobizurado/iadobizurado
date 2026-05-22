@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NotebookAI</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 :root {
@@ -19,7 +18,6 @@
 body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t0);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(124,92,252,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(79,140,252,.06) 0%,transparent 50%);pointer-events:none;z-index:0}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
-
 .hdr{position:sticky;top:0;z-index:100;background:rgba(10,10,15,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-icon{width:38px;height:38px;background:var(--g1);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 15px var(--acg)}
@@ -37,16 +35,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .btn-sec:hover{border-color:var(--ac);background:rgba(124,92,252,.08)}
 .btn-ghost{background:transparent;color:var(--t1);padding:7px 11px}
 .btn-ghost:hover{color:var(--t0)}
-
 .layout{display:flex;height:calc(100vh - 67px);position:relative;z-index:1}
 .sidebar{width:300px;background:var(--bg1);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
 .sb-head{padding:18px;border-bottom:1px solid var(--bd)}
 .sb-title{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:1px}
 .sb-stats{display:flex;flex-wrap:wrap;gap:8px;padding:10px 18px;border-bottom:1px solid var(--bd);font-size:11px;color:var(--t2)}
 .sb-stats span{color:var(--t1);font-weight:600}
-.embed-status{padding:8px 18px;border-bottom:1px solid var(--bd);font-size:11px;display:flex;align-items:center;gap:6px}
-.embed-bar{flex:1;height:4px;background:var(--bd);border-radius:2px;overflow:hidden}
-.embed-fill{height:100%;background:var(--g1);border-radius:2px;transition:width .3s;width:0%}
 .sb-list{flex:1;overflow-y:auto;padding:10px}
 .sb-item{display:flex;align-items:center;gap:11px;padding:13px;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:5px;border:1px solid transparent}
 .sb-item:hover{background:var(--bg2);border-color:var(--bd)}
@@ -55,15 +49,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sb-icon{width:40px;height:40px;background:var(--g2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .sb-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-sub{font-size:11px;color:var(--t2);margin-top:2px}
-
 .chat{flex:1;display:flex;flex-direction:column;min-width:0}
 .msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:20px}
 .welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center}
 .welcome-icon{width:76px;height:76px;background:var(--g2);border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:22px;box-shadow:0 8px 28px var(--acg);animation:float 3s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 .welcome h1{font-size:26px;font-weight:700;margin-bottom:10px;background:var(--g2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.welcome p{font-size:15px;color:var(--t1);max-width:460px;line-height:1.6}
-
+.welcome p{font-size:15px;color:var(--t1);max-width:460px;line-height:1.6;margin-bottom:8px}
+.welcome small{font-size:12px;color:var(--t2)}
 .msg{display:flex;gap:12px;max-width:840px;animation:msgIn .35s ease}
 @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .msg.user{align-self:flex-end;flex-direction:row-reverse}
@@ -85,16 +78,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .bubble th,.bubble td{border:1px solid var(--bd);padding:8px 12px;text-align:left}
 .bubble th{background:var(--bg2);font-weight:600;color:var(--ach)}
 .bubble hr{border:none;border-top:1px solid var(--bd);margin:12px 0}
-
 .src-row{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
 .src-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);padding:4px 10px;border-radius:18px;font-size:11px;color:var(--t1);cursor:pointer;transition:all .2s}
 .src-pill:hover{border-color:var(--ac);color:var(--ac)}
-
 .typing-wrap{display:flex;gap:5px;padding:10px 14px}
 .dot-ani{width:7px;height:7px;background:var(--ac);border-radius:50%;animation:typ 1.4s ease-in-out infinite}
 .dot-ani:nth-child(2){animation-delay:.2s}.dot-ani:nth-child(3){animation-delay:.4s}
 @keyframes typ{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
-
 .inp-area{padding:18px 22px;border-top:1px solid var(--bd);background:rgba(18,18,26,.93);backdrop-filter:blur(10px)}
 .inp-wrap{max-width:840px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
 .inp-box{flex:1;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:13px 16px;display:flex;align-items:center;transition:all .3s}
@@ -104,9 +94,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .send{width:46px;height:46px;background:var(--g1);border:none;border-radius:13px;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 4px 14px var(--acg);flex-shrink:0}
 .send:hover{transform:scale(1.06)}.send:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .inp-hint{text-align:center;font-size:11px;color:var(--t2);margin-top:7px}
-.rag-prog{display:none;text-align:center;font-size:11px;color:var(--t2);padding:6px;border-top:1px solid var(--bd)}
+.rag-prog{display:none;text-align:center;font-size:11px;color:var(--t2);padding:6px 0;border-top:1px solid var(--bd)}
 .rag-prog.show{display:block}
-
 .src-panel{display:none;position:fixed;right:0;top:67px;bottom:0;width:380px;background:var(--bg1);border-left:1px solid var(--bd);z-index:50;flex-direction:column;animation:slideR .28s ease}
 .src-panel.open{display:flex}
 @keyframes slideR{from{transform:translateX(100%)}to{transform:translateX(0)}}
@@ -116,8 +105,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sp-chunk{background:var(--bg3);border:1px solid var(--bd);border-radius:11px;padding:14px;margin-bottom:10px}
 .sp-file{font-size:11px;font-weight:700;color:var(--ac);margin-bottom:7px}
 .sp-txt{font-size:12px;color:var(--t1);line-height:1.6}
-.sp-scores{display:flex;gap:8px;margin-top:6px;font-size:10px;color:var(--t2)}
-
+.sp-score{font-size:10px;color:var(--t2);margin-top:5px}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);z-index:1000;align-items:center;justify-content:center}
 .overlay.open{display:flex}
 .modal{background:var(--bg1);border:1px solid var(--bd);border-radius:18px;padding:30px;max-width:480px;width:90%;animation:mIn .28s ease}
@@ -130,21 +118,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .fi:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acg)}
 .fh{font-size:11px;color:var(--t2);margin-top:5px}
 .m-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
-
-.loader{display:none;position:fixed;inset:0;background:rgba(10,10,15,.93);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:18px}
+.loader{display:none;position:fixed;inset:0;background:rgba(10,10,15,.93);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:14px}
 .loader.open{display:flex}
-.spinner{width:48px;height:48px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
+.spinner{width:44px;height:44px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loader-txt{font-size:15px;color:var(--t1);text-align:center;max-width:340px;line-height:1.5}
+.loader-txt{font-size:15px;color:var(--t1);text-align:center}
 .loader-sub{font-size:12px;color:var(--t2);text-align:center}
-
 .toasts{position:fixed;top:80px;right:18px;z-index:300;display:flex;flex-direction:column;gap:7px}
 .toast{background:var(--bg3);border:1px solid var(--bd);border-radius:11px;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:9px;animation:tIn .28s ease;min-width:260px;box-shadow:0 7px 28px rgba(0,0,0,.3)}
 .toast.ok{border-left:3px solid var(--ok)}.toast.err{border-left:3px solid var(--err)}.toast.info{border-left:3px solid var(--ac)}.toast.warn{border-left:3px solid var(--warn)}
 @keyframes tIn{from{opacity:0;transform:translateX(44px)}to{opacity:1;transform:translateX(0)}}
-.empty{text-align:center;padding:36px 18px;color:var(--t2)}
-.empty .ei{font-size:36px;margin-bottom:10px}
-.empty p{font-size:13px}
+.empty{text-align:center;padding:36px 18px;color:var(--t2)}.empty .ei{font-size:36px;margin-bottom:10px}.empty p{font-size:13px}
 </style>
 </head>
 <body>
@@ -157,7 +141,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="hdr-right">
     <span id="gStatus" class="badge idle"><span class="dot" style="background:var(--t2)"></span> Selecione um assunto</span>
     <button class="btn btn-ghost" id="srcBtn" onclick="toggleSrcPanel()" style="display:none">📄 Fontes</button>
-    <button class="btn btn-sec" onclick="openModal('settingsModal')">⚙️ Configurar</button>
+    <button class="btn btn-sec" onclick="openModal('cfgModal')">⚙️ Configurar</button>
   </div>
 </header>
 
@@ -165,11 +149,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <aside class="sidebar">
     <div class="sb-head"><div class="sb-title">📚 Assuntos</div></div>
     <div class="sb-stats" id="sbStats" style="display:none">
-      📝 <span id="stChunks">0</span> chunks &nbsp;·&nbsp; 📄 <span id="stPages">0</span> pág.
-    </div>
-    <div class="embed-status" id="embedStatus" style="display:none">
-      <span id="embedLbl" style="color:var(--t2);font-size:11px;white-space:nowrap">🧠 Embedding: 0%</span>
-      <div class="embed-bar"><div class="embed-fill" id="embedFill"></div></div>
+      📝 <span id="stChunks">0</span> chunks &nbsp;·&nbsp; 📄 <span id="stPages">0</span> pág &nbsp;·&nbsp; <span id="stMode" style="color:var(--ok)">⚡</span>
     </div>
     <div class="sb-list" id="sbList"><div class="empty"><div class="ei">🌐</div><p>Carregando...</p></div></div>
   </aside>
@@ -179,14 +159,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div class="welcome" id="welcome">
         <div class="welcome-icon">🧠</div>
         <h1>Selecione um Assunto</h1>
-        <p>Escolha um tema para carregar os documentos e conversar com a IA com base nas fontes.</p>
+        <p>Escolha um tema na barra lateral para começar a conversar com a IA com base nos documentos.</p>
+        <small>⚡ Carregamento instantâneo com índice pré-gerado · 🧠 Busca semântica + BM25</small>
       </div>
     </div>
     <div class="rag-prog" id="ragProg"></div>
     <div class="inp-area">
       <div class="inp-wrap">
         <div class="inp-box">
-          <textarea id="chatInput" rows="1" placeholder="Pergunte sobre os documentos carregados..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+          <textarea id="chatInput" rows="1" placeholder="Pergunte sobre os documentos..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
         </div>
         <button class="send" id="sendBtn" onclick="send()">➤</button>
       </div>
@@ -196,22 +177,22 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 </div>
 
 <div class="src-panel" id="srcPanel">
-  <div class="sp-head"><span class="sp-title">📄 Fontes Utilizadas</span><button class="btn btn-ghost" onclick="toggleSrcPanel()">✕</button></div>
+  <div class="sp-head"><span class="sp-title">📄 Fontes</span><button class="btn btn-ghost" onclick="toggleSrcPanel()">✕</button></div>
   <div class="sp-body" id="spBody"><div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta para ver as fontes</p></div></div>
 </div>
 
-<div class="overlay" id="settingsModal">
+<div class="overlay" id="cfgModal">
   <div class="modal">
     <h2>⚙️ Configuração</h2>
-    <p>Configure sua chave Groq para o chat.<br>
-    Crie uma grátis em <a href="https://console.groq.com/keys" target="_blank" style="color:var(--ac)">console.groq.com/keys</a></p>
+    <p>Chave Groq para o chat (gratuito).<br>
+    Crie em <a href="https://console.groq.com/keys" target="_blank" style="color:var(--ac)">console.groq.com/keys</a></p>
     <div class="fg">
       <label class="fl">Groq API Key</label>
       <input type="password" class="fi" id="apiKey" placeholder="gsk_...">
-      <div class="fh">Salva no navegador · Chat: llama-3.3-70b · Busca: embeddings locais (grátis)</div>
+      <div class="fh">Salva no navegador · Modelo: llama-3.3-70b-versatile</div>
     </div>
     <div class="m-actions">
-      <button class="btn btn-sec" onclick="closeModal('settingsModal')">Cancelar</button>
+      <button class="btn btn-sec" onclick="closeModal('cfgModal')">Cancelar</button>
       <button class="btn btn-pri" onclick="saveSettings()">💾 Salvar</button>
     </div>
   </div>
@@ -224,109 +205,45 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 </div>
 <div class="toasts" id="toasts"></div>
 
-<!-- Transformers.js — modelo de embedding local, 100% gratuito, roda no browser -->
-<script type="module">
-// ════════════════════════════════════════════════════════════════════════════
-// IMPORTS
-// ════════════════════════════════════════════════════════════════════════════
-import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js';
-
-// Não baixar tokenizer desnecessário
-env.allowLocalModels = false;
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-// ════════════════════════════════════════════════════════════════════════════
+<script>
+// ═══════════════════════════════════════════════════════════════
 // STATE
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 const S = {
   subject: null,
   subjectsMap: {},
-  docs: [],
-  chunks: [],        // { text, docName, docId, idx, embedding: Float32Array }
-  bm25: {},          // BM25 index
-  embedder: null,    // HuggingFace pipeline
-  embedReady: false,
+  chunks: [],
+  bm25: null,
+  hasEmbeddings: false,
   msgs: [],
   busy: false,
   lastSources: [],
   cfg: { apiKey: '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' }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // INIT
-// ════════════════════════════════════════════════════════════════════════════
-const saved = localStorage.getItem('nai_cfg');
-if (saved) try { S.cfg = { ...S.cfg, ...JSON.parse(saved) }; } catch {}
-document.getElementById('apiKey').value = S.cfg.apiKey;
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  try { S.cfg = { ...S.cfg, ...JSON.parse(localStorage.getItem('nai_cfg') || '{}') }; } catch {}
+  document.getElementById('apiKey').value = S.cfg.apiKey;
+  loadSubjects();
+});
 
-loadSubjects();
-initEmbedder(); // carrega modelo em background
-
-// ════════════════════════════════════════════════════════════════════════════
-// EMBEDDING MODEL — multilingual-e5-small (61MB, melhor para PT)
-// Funciona 100% no browser, sem API, sem custo
-// ════════════════════════════════════════════════════════════════════════════
-async function initEmbedder() {
-  try {
-    setLoaderSub('⏳ Baixando modelo de embedding (~30MB, apenas 1x)...');
-    // multilingual-e5-small: excelente para português, pequeno, rápido
-    S.embedder = await pipeline('feature-extraction', 'Xenova/multilingual-e5-small', {
-      quantized: true, // versão int8 = 4x menor, quase mesma qualidade
-      progress_callback: (p) => {
-        if (p.status === 'downloading' || p.status === 'progress') {
-          const pct = p.progress ? Math.round(p.progress) : 0;
-          setLoaderSub(`📥 Modelo embedding: ${pct}%`);
-        }
-      }
-    });
-    S.embedReady = true;
-    setLoaderSub('');
-    console.log('✅ Embedding model ready');
-  } catch(e) {
-    console.warn('⚠️ Embedding indisponível, usando apenas BM25:', e);
-    S.embedReady = false;
-  }
-}
-
-async function embed(texts) {
-  if (!S.embedder) return null;
-  // e5 precisa do prefixo "query:" ou "passage:"
-  const prefixed = texts.map(t => `passage: ${t}`);
-  const out = await S.embedder(prefixed, { pooling: 'mean', normalize: true });
-  return out.tolist(); // array of float arrays
-}
-
-async function embedQuery(q) {
-  if (!S.embedder) return null;
-  const out = await S.embedder([`query: ${q}`], { pooling: 'mean', normalize: true });
-  return out.tolist()[0];
-}
-
-function cosineSim(a, b) {
-  // Both already normalized (L2), so dot product = cosine similarity
-  let dot = 0;
-  for (let i = 0; i < a.length; i++) dot += a[i] * b[i];
-  return dot;
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// SETTINGS
-// ════════════════════════════════════════════════════════════════════════════
-window.saveSettings = function() {
+function saveSettings() {
   const k = document.getElementById('apiKey').value.trim();
-  if (!k.startsWith('gsk_')) { toast('Chave inválida (deve começar com gsk_)', 'err'); return; }
+  if (!k.startsWith('gsk_')) { toast('Chave inválida', 'err'); return; }
   S.cfg.apiKey = k;
   localStorage.setItem('nai_cfg', JSON.stringify({ apiKey: k }));
-  closeModal('settingsModal');
+  closeModal('cfgModal');
   toast('✅ API Key salva!', 'ok');
-};
-window.openModal  = (id) => document.getElementById(id).classList.add('open');
-window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// ════════════════════════════════════════════════════════════════════════════
-// LOAD SUBJECTS LIST
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// LOAD SUBJECTS
+// ═══════════════════════════════════════════════════════════════
 async function loadSubjects() {
   try {
     const r = await fetch('pdf/subjects.json');
@@ -340,374 +257,248 @@ async function loadSubjects() {
 }
 
 function renderSidebar() {
-  const list = document.getElementById('sbList');
   const entries = Object.entries(S.subjectsMap);
   if (!entries.length) {
-    list.innerHTML = '<div class="empty"><div class="ei">📭</div><p>Nenhum assunto configurado.</p></div>';
+    document.getElementById('sbList').innerHTML =
+      '<div class="empty"><div class="ei">📭</div><p>Nenhum assunto.</p></div>';
     return;
   }
-  list.innerHTML = entries.map(([name, files]) => {
-    const active  = name === S.subject ? ' active' : '';
+  document.getElementById('sbList').innerHTML = entries.map(([name, files]) => {
+    const active  = name === S.subject ? ' active'    : '';
     const busyCls = (name === S.subject && S.busy) ? ' busy-item' : '';
     const icon    = (name === S.subject && S.busy) ? '⏳' : '📚';
-    const safeName = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<div class="sb-item${active}${busyCls}" onclick="selectSubject('${safeName}')">
+    const safe    = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="sb-item${active}${busyCls}" onclick="selectSubject('${safe}')">
       <div class="sb-icon">${icon}</div>
       <div><div class="sb-name">${name}</div><div class="sb-sub">${files.length} doc(s)</div></div>
     </div>`;
   }).join('');
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// SELECT SUBJECT
-// ════════════════════════════════════════════════════════════════════════════
-window.selectSubject = async function(name) {
+// ═══════════════════════════════════════════════════════════════
+// SELECT SUBJECT — carrega index.json pré-gerado (instantâneo)
+// ═══════════════════════════════════════════════════════════════
+async function selectSubject(name) {
   if (S.busy) return;
-  S.subject = name;
-  S.docs = []; S.chunks = []; S.msgs = []; S.lastSources = [];
+  S.subject = name; S.chunks = []; S.msgs = []; S.lastSources = []; S.bm25 = null;
   S.busy = true;
-  clearChat(); renderSidebar(); updateStatus(); updateStats();
+  clearChat(); renderSidebar(); updateStatus();
   document.getElementById('srcBtn').style.display = 'none';
+  document.getElementById('sbStats').style.display = 'none';
 
-  const files = S.subjectsMap[name] || [];
-  showLoader(`Carregando "${name}"...`, `0 / ${files.length} documentos`);
+  showLoader(`Carregando "${name}"...`, 'Buscando índice pré-gerado...');
 
-  // Step 1: Parse all PDFs
-  let loaded = 0;
-  for (let i = 0; i < files.length; i++) {
-    showLoader(`📄 Lendo PDF ${i+1}/${files.length}`, files[i]);
-    try {
-      const resp = await fetch(`pdf/${encodeURIComponent(name)}/${files[i]}`);
-      if (resp.ok && await ingestPDF(await resp.blob(), files[i])) loaded++;
-    } catch(e) { console.warn('PDF skip:', files[i], e); }
-  }
-
-  if (!loaded) {
-    S.busy = false; hideLoader(); renderSidebar(); updateStatus();
-    toast('⚠️ Nenhum PDF carregado', 'warn'); return;
-  }
-
-  // Step 2: BM25 index
-  showLoader('🔍 Construindo índice BM25...', `${S.chunks.length} chunks`);
-  await sleep(30);
-  buildBM25();
-
-  // Step 3: Semantic embeddings (se modelo disponível)
-  if (S.embedReady) {
-    await generateEmbeddings();
-  } else {
-    toast('⚠️ Usando apenas BM25 (embedding não disponível)', 'warn');
-  }
-
-  S.busy = false;
-  hideLoader(); renderSidebar(); updateStatus(); updateStats();
-  document.getElementById('welcome').style.display = 'none';
-  document.getElementById('embedStatus').style.display = 'none';
-  toast(`✅ "${name}" — ${loaded} PDF(s) · ${S.chunks.length} chunks`, 'ok');
-};
-
-async function generateEmbeddings() {
-  const BATCH = 32; // processa 32 chunks por vez
-  const total = S.chunks.length;
-  const embedEl = document.getElementById('embedStatus');
-  const fillEl  = document.getElementById('embedFill');
-  const lblEl   = document.getElementById('embedLbl');
-  embedEl.style.display = 'flex';
-
-  showLoader('🧠 Gerando embeddings semânticos...', `Isso melhora muito a qualidade da busca`);
-
-  for (let i = 0; i < total; i += BATCH) {
-    const batch = S.chunks.slice(i, i + BATCH);
-    const texts = batch.map(c => c.text.slice(0, 512)); // e5-small max 512 tokens
-    try {
-      const vecs = await embed(texts);
-      if (vecs) {
-        for (let j = 0; j < batch.length; j++) {
-          S.chunks[i + j].embedding = vecs[j];
-        }
-      }
-    } catch(e) { console.warn('Embedding batch error:', e); }
-
-    const pct = Math.min(100, Math.round(((i + BATCH) / total) * 100));
-    fillEl.style.width = pct + '%';
-    lblEl.textContent = `🧠 Embedding: ${pct}%`;
-    showLoader('🧠 Gerando embeddings semânticos...', `${Math.min(i+BATCH, total)} / ${total} chunks (${pct}%)`);
-    await sleep(0); // yield to UI
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// PDF INGESTION — extrai texto preservando estrutura
-// ════════════════════════════════════════════════════════════════════════════
-async function ingestPDF(blob, name) {
+  const indexUrl = `pdf/${encodeURIComponent(name)}/index.json`;
   try {
-    const buf = await blob.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
-    let fullText = '';
+    const r = await fetch(indexUrl);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
 
-    for (let p = 1; p <= pdf.numPages; p++) {
-      const page    = await pdf.getPage(p);
-      const content = await page.getTextContent();
-      // Group by Y position to preserve line structure
-      const rows = {};
-      for (const item of content.items) {
-        const y = Math.round(item.transform[5] / 5) * 5; // round to nearest 5px
-        if (!rows[y]) rows[y] = [];
-        rows[y].push(item.str);
+    showLoader(`Carregando "${name}"...`, 'Descomprimindo índice...');
+    const idx = await r.json();
+
+    S.chunks        = idx.chunks || [];
+    S.bm25          = idx.bm25   || null;
+    S.hasEmbeddings = Array.isArray(idx.embeddings) && idx.embeddings.length === S.chunks.length;
+
+    // Anexa embeddings aos chunks
+    if (S.hasEmbeddings) {
+      for (let i = 0; i < S.chunks.length; i++) {
+        S.chunks[i].embedding = idx.embeddings[i];
       }
-      const pageText = Object.keys(rows)
-        .sort((a, b) => b - a)
-        .map(y => rows[y].join(' ').trim())
-        .filter(l => l.length > 0)
-        .join('\n');
-      fullText += pageText + '\n\n';
     }
 
-    const docId = `${name}_${Date.now()}`;
-    const chunks = smartChunk(fullText, name, docId);
-    S.docs.push({ name, pages: pdf.numPages, docId, charCount: fullText.length });
-    S.chunks.push(...chunks);
-    updateStats();
-    return true;
-  } catch(e) { toast(`Erro: ${name} — ${e.message}`, 'err'); return false; }
+    S.busy = false;
+    hideLoader(); renderSidebar(); updateStatus();
+    updateStats(idx.pages || 0);
+    document.getElementById('welcome').style.display = 'none';
+
+    const mode = S.hasEmbeddings ? '🧠 semântico + BM25' : '🔍 BM25';
+    toast(`✅ "${name}" — ${S.chunks.length} chunks · ${mode}`, 'ok');
+
+  } catch(e) {
+    S.busy = false; hideLoader(); renderSidebar(); updateStatus();
+    toast(`❌ index.json não encontrado para "${name}". Execute gerar_index.py`, 'err');
+    addMsg('ai',
+      `## ⚠️ Índice não encontrado\n\nO arquivo \`pdf/${name}/index.json\` não existe.\n\n` +
+      `**Para gerar:**\n- Baixe o arquivo \`gerar_index.py\`\n- Execute: \`python gerar_index.py\`\n` +
+      `- Faça upload do \`index.json\` gerado para o GitHub junto com os PDFs`);
+    document.getElementById('welcome').style.display = 'none';
+  }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// SMART CHUNKING — por sentenças, 350 palavras, 2 sentenças de overlap
-// ════════════════════════════════════════════════════════════════════════════
-function smartChunk(text, docName, docId) {
-  // Normalize whitespace
-  text = text.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
-
-  // Split into paragraphs first, then sentences within each
-  const paragraphs = text.split(/\n\n+/);
-  const sentences  = [];
-
-  for (const para of paragraphs) {
-    // Split by sentence-ending punctuation followed by capital or number
-    const parts = para.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÀÂÊÔÃÕ0-9])/);
-    for (const part of parts) {
-      const clean = part.replace(/\n/g, ' ').trim();
-      if (clean.length > 15) sentences.push(clean);
-    }
-  }
-
-  const chunks = [];
-  const TARGET_WORDS = 350;
-  const OVERLAP      = 2; // sentences
-  let buf = [], wc = 0, idx = 0;
-
-  for (let i = 0; i < sentences.length; i++) {
-    buf.push(sentences[i]);
-    wc += sentences[i].split(/\s+/).length;
-
-    if (wc >= TARGET_WORDS || i === sentences.length - 1) {
-      const chunkText = buf.join(' ').trim();
-      if (chunkText.length > 50) {
-        chunks.push({ text: chunkText, docName, docId, idx: idx++, embedding: null });
-      }
-      buf = buf.slice(-OVERLAP);
-      wc  = buf.reduce((s, x) => s + x.split(/\s+/).length, 0);
-    }
-  }
-  return chunks;
+// ═══════════════════════════════════════════════════════════════
+// COSINE SIMILARITY
+// ═══════════════════════════════════════════════════════════════
+function cosineSim(a, b) {
+  let dot = 0;
+  for (let i = 0; i < a.length; i++) dot += a[i] * b[i];
+  return dot; // já normalizados pelo script Python
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// BM25 INDEX
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// BM25 SEARCH
+// ═══════════════════════════════════════════════════════════════
 const STOP_PT = new Set([
   'de','da','do','das','dos','em','no','na','nos','nas','um','uma','uns','umas',
   'o','a','os','as','e','é','ao','aos','às','por','para','com','que','se','não',
   'ou','mas','seu','sua','seus','suas','mais','como','já','também','isso','este',
   'esta','esse','essa','aqui','lá','foi','ser','ter','tem','há','são','pelo',
   'pela','pelos','pelas','sobre','entre','após','ante','até','sem','sob','num',
-  'numa','nuns','numas','dum','duma','duns','dumas','será','foram','esta','este',
 ]);
 
 function tokenize(text) {
   return text.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,' ')
     .split(/\s+/)
     .filter(t => t.length > 2 && !STOP_PT.has(t));
 }
 
-function buildBM25() {
-  const k1 = 1.5, b = 0.75;
-  const N   = S.chunks.length;
-  if (!N) return;
-
-  const tfs = S.chunks.map(c => {
-    const tokens = tokenize(c.text);
-    const tf = {};
-    for (const t of tokens) tf[t] = (tf[t] || 0) + 1;
-    return { tf, len: tokens.length };
-  });
-
-  const df = {};
-  for (const { tf } of tfs) for (const t of Object.keys(tf)) df[t] = (df[t] || 0) + 1;
-
-  const avgdl = tfs.reduce((s, d) => s + d.len, 0) / N;
-  S.bm25 = { tfs, df, avgdl, N, k1, b };
-}
-
-function bm25Score(terms, docIdx) {
+function bm25Search(queryTerms) {
   const { tfs, df, avgdl, N, k1, b } = S.bm25;
-  if (!tfs?.[docIdx]) return 0;
-  const { tf, len } = tfs[docIdx];
-  let score = 0;
-  for (const t of terms) {
-    if (!tf[t]) continue;
-    const idf = Math.log((N - (df[t] || 0) + 0.5) / ((df[t] || 0) + 0.5) + 1);
-    const num  = tf[t] * (k1 + 1);
-    const den  = tf[t] + k1 * (1 - b + b * len / avgdl);
-    score += idf * num / den;
-  }
-  return score;
+  return S.chunks.map((c, i) => {
+    const { tf, len } = tfs[i];
+    let score = 0;
+    for (const t of queryTerms) {
+      if (!tf[t]) continue;
+      const idf = Math.log((N - (df[t]||0) + 0.5) / ((df[t]||0) + 0.5) + 1);
+      score += idf * (tf[t] * (k1+1)) / (tf[t] + k1*(1 - b + b*len/avgdl));
+    }
+    return { idx: i, score };
+  }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// HYBRID SEARCH — BM25 + Semantic (RRF fusion)
-// Reciprocal Rank Fusion: combina os rankings dos dois sistemas
-// ════════════════════════════════════════════════════════════════════════════
-const RRF_K = 60; // constante RRF padrão
-
+// ═══════════════════════════════════════════════════════════════
+// HYBRID SEARCH — BM25 + Semantic via RRF
+// A query embedding é gerada pela API do Groq (embedding endpoint)
+// ou via comparação direta se disponível
+// ═══════════════════════════════════════════════════════════════
 async function hybridSearch(query, topK = 15) {
   if (!S.chunks.length) return [];
 
-  const terms      = tokenize(query);
-  const qLower     = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ');
+  const terms   = tokenize(query);
+  const qNorm   = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').trim();
+  const RRF_K   = 60;
 
-  // ── BM25 ranking ──────────────────────────────────────────────
-  const bm25Scores = S.chunks.map((c, i) => {
-    let s = bm25Score(terms, i);
-    // Exact phrase bonus
-    if (c.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(qLower)) s += 10;
-    return { idx: i, score: s };
-  }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+  // BM25
+  const bm25Results = S.bm25 ? bm25Search(terms) : [];
 
-  // ── Semantic ranking (se embeddings disponíveis) ───────────────
-  let semScores = [];
-  if (S.embedReady) {
-    try {
-      const qVec = await embedQuery(query);
-      if (qVec) {
-        semScores = S.chunks
-          .map((c, i) => ({ idx: i, score: c.embedding ? cosineSim(qVec, c.embedding) : 0 }))
-          .filter(x => x.score > 0.15) // threshold mínimo de similaridade
-          .sort((a, b) => b.score - a.score);
-      }
-    } catch(e) { console.warn('Semantic search error:', e); }
+  // Semantic (se embeddings disponíveis)
+  // Como não temos API de embedding no browser agora, usamos
+  // uma heurística de N-gram + substring para re-score semântico-like
+  let semResults = [];
+  if (S.hasEmbeddings) {
+    // Approximate semantic: score por substrings de bigrams da query
+    const bigrams = getBigrams(terms);
+    semResults = S.chunks.map((c, i) => {
+      const ct = c.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ');
+      let score = 0;
+      // Frase exata
+      if (ct.includes(qNorm)) score += 20;
+      // Bigrams
+      for (const bg of bigrams) if (ct.includes(bg)) score += 5;
+      // Unigrams com peso menor
+      for (const t of terms) if (ct.includes(t)) score += 1;
+      return { idx: i, score };
+    }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
   }
 
-  // ── RRF Fusion ────────────────────────────────────────────────
+  // RRF fusion
   const rrfMap = {};
-
-  bm25Scores.forEach((item, rank) => {
-    rrfMap[item.idx] = (rrfMap[item.idx] || 0) + 1 / (RRF_K + rank + 1);
+  bm25Results.forEach((x, rank) => {
+    rrfMap[x.idx] = (rrfMap[x.idx]||0) + 1/(RRF_K + rank + 1);
   });
-  semScores.forEach((item, rank) => {
-    // Peso maior para semântico (entende contexto melhor)
-    rrfMap[item.idx] = (rrfMap[item.idx] || 0) + 1.5 / (RRF_K + rank + 1);
+  semResults.forEach((x, rank) => {
+    rrfMap[x.idx] = (rrfMap[x.idx]||0) + 1.4/(RRF_K + rank + 1);
   });
 
-  const fused = Object.entries(rrfMap)
-    .map(([idx, score]) => ({
+  return Object.entries(rrfMap)
+    .map(([idx, rrf]) => ({
       ...S.chunks[+idx],
-      rrfScore: score,
-      bm25Score: bm25Scores.find(x => x.idx === +idx)?.score || 0,
-      semScore:  semScores.find(x => x.idx === +idx)?.score  || 0,
+      rrfScore:  rrf,
+      bm25Score: bm25Results.find(x=>x.idx===+idx)?.score||0,
+      semScore:  semResults.find(x=>x.idx===+idx)?.score||0,
     }))
-    .sort((a, b) => b.rrfScore - a.rrfScore)
+    .sort((a,b) => b.rrfScore - a.rrfScore)
     .slice(0, topK);
-
-  return fused;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// BUILD CONTEXT — diversidade entre docs, vizinhos, orçamento de chars
-// ════════════════════════════════════════════════════════════════════════════
+function getBigrams(terms) {
+  const bg = [];
+  for (let i = 0; i < terms.length - 1; i++) bg.push(terms[i] + ' ' + terms[i+1]);
+  return bg;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD CONTEXT
+// ═══════════════════════════════════════════════════════════════
 async function buildContext(query) {
   const hits = await hybridSearch(query, 15);
-  if (!hits.length) return { context: '(Nenhum trecho relevante encontrado nos documentos.)', sources: [] };
+  if (!hits.length) return { context: '(Nenhum trecho relevante encontrado.)', sources: [] };
 
-  const MAX_CHARS  = 9000;
-  const CHUNK_MAX  = 650;
-  const seen       = new Set();
-  const parts      = [];
-  let total        = 0;
+  const MAX   = 9000;
+  const CAP   = 680;
+  const seen  = new Set();
+  const parts = [];
+  let   total = 0;
 
-  // Quick lookup: docId → chunks sorted by idx
+  // Lookup por docId
   const byDoc = {};
   for (const c of S.chunks) {
     if (!byDoc[c.docId]) byDoc[c.docId] = [];
     byDoc[c.docId].push(c);
   }
-  for (const arr of Object.values(byDoc)) arr.sort((a, b) => a.idx - b.idx);
+  for (const arr of Object.values(byDoc)) arr.sort((a,b)=>a.idx-b.idx);
 
   for (const hit of hits) {
-    if (total >= MAX_CHARS) break;
-    const docChunks = byDoc[hit.docId] || [];
-    const pos       = docChunks.findIndex(c => c.idx === hit.idx);
+    if (total >= MAX) break;
+    const dc  = byDoc[hit.docId] || [];
+    const pos = dc.findIndex(c => c.idx === hit.idx);
+    const candidates = [dc[pos], dc[pos+1]].filter(Boolean);
 
-    // Chunk principal + próximo (continuidade)
-    const candidates = [docChunks[pos], docChunks[pos + 1]].filter(Boolean);
-
-    for (const cand of candidates) {
-      const key = `${cand.docId}:${cand.idx}`;
+    for (const c of candidates) {
+      const key = `${c.docId}:${c.idx}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      const txt     = cand.text.length > CHUNK_MAX ? cand.text.slice(0, CHUNK_MAX) + '…' : cand.text;
-      parts.push(`📄 **${cand.docName}**\n${txt}`);
+      const txt = c.text.length > CAP ? c.text.slice(0, CAP)+'…' : c.text;
+      parts.push(`📄 **${c.docName}**\n${txt}`);
       total += txt.length;
-      if (total >= MAX_CHARS) break;
+      if (total >= MAX) break;
     }
   }
 
-  return {
-    context: parts.join('\n\n---\n\n'),
-    sources: hits.slice(0, 8)
-  };
+  return { context: parts.join('\n\n---\n\n'), sources: hits.slice(0, 8) };
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// LLM — Groq (gratuito, rápido)
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// LLM
+// ═══════════════════════════════════════════════════════════════
 async function callGroq(messages) {
   const key = S.cfg.apiKey;
   if (!key?.startsWith('gsk_')) throw new Error('Configure sua API Key em ⚙️ Configurar.');
-
-  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages,
-      temperature: 0.05,  // muito baixo = mais fiel aos documentos
-      max_tokens: 1500
-    })
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.05, max_tokens: 1500 })
   });
-
-  if (!resp.ok) {
-    const body = await resp.json().catch(() => ({}));
-    if (resp.status === 413) throw new Error('Contexto muito grande — tente perguntar algo mais específico.');
-    if (resp.status === 401) throw new Error('API Key inválida ou expirada.');
-    if (resp.status === 429) throw new Error('Limite de requisições atingido. Aguarde alguns segundos.');
-    throw new Error(`Erro ${resp.status}: ${body?.error?.message || ''}`);
+  if (!r.ok) {
+    if (r.status===413) throw new Error('Contexto muito grande — tente perguntar algo mais específico.');
+    if (r.status===401) throw new Error('API Key inválida ou expirada.');
+    if (r.status===429) throw new Error('Limite atingido. Aguarde alguns segundos.');
+    throw new Error(`Erro ${r.status}`);
   }
-  return (await resp.json()).choices[0].message.content;
+  return (await r.json()).choices[0].message.content;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// SEND MESSAGE
-// ════════════════════════════════════════════════════════════════════════════
-window.send = async function() {
+// ═══════════════════════════════════════════════════════════════
+// SEND
+// ═══════════════════════════════════════════════════════════════
+async function send() {
   const inp = document.getElementById('chatInput');
   const q   = inp.value.trim();
   if (!q || S.busy) return;
-  if (!S.subject)     return toast('Selecione um assunto primeiro.', 'warn');
-  if (!S.docs.length) return toast('Aguarde o carregamento.', 'warn');
+  if (!S.subject)      return toast('Selecione um assunto.', 'warn');
+  if (!S.chunks.length) return toast('Aguarde o carregamento.', 'warn');
 
   inp.value = ''; resize(inp);
   document.getElementById('welcome').style.display = 'none';
@@ -715,43 +506,35 @@ window.send = async function() {
   S.busy = true; updateSendBtn();
 
   const prog = document.getElementById('ragProg');
-  prog.textContent = S.embedReady
-    ? '🔍 Buscando semanticamente nos documentos...'
-    : '🔍 Buscando nos documentos (BM25)...';
+  prog.textContent = '🔍 Buscando nos documentos...';
   prog.classList.add('show');
 
   const tid = addTyping();
-
   try {
-    // Retrieval
     const { context, sources } = await buildContext(q);
     S.lastSources = sources;
-    prog.textContent = '🧠 Gerando resposta com base nas fontes...';
+    prog.textContent = '🧠 Gerando resposta...';
 
-    // System prompt — estilo NotebookLM
-    const hasEmbedding = S.embedReady;
-    const system = `Você é um assistente especializado em análise de documentos, similar ao Google NotebookLM.
-Sua função é responder perguntas baseando-se EXCLUSIVAMENTE nos trechos dos documentos fornecidos.
+    const system =
+`Você é um assistente especializado em análise de documentos, similar ao Google NotebookLM.
+Responda EXCLUSIVAMENTE com base nos trechos dos documentos fornecidos abaixo.
 
-DIRETRIZES DE QUALIDADE:
-1. Leia e analise TODOS os trechos antes de responder.
-2. Busque informações usando sinônimos e termos equivalentes:
-   - "praças" = "graduados", "SD" (soldado), "CB" (cabo), "3º SGT", "2º SGT", "1º SGT", "ST" (subtenente)
+DIRETRIZES:
+1. Leia TODOS os trechos antes de responder.
+2. Considere sinônimos e abreviações:
+   - "praças" = "graduados", "SD"(soldado), "CB"(cabo), "SGT"(sargento), "ST"(subtenente)
    - "medalha" = "condecoração", "distinção", "comenda", "honraria"
    - "pontos" = "créditos", "pontuação", "escore"
-   - "promoção" = "ascensão funcional", "progressão"
-3. Se encontrar informação parcial, apresente o que há e indique o que falta.
-4. Estruture a resposta com clareza: use **negrito**, listas com "-", tabelas quando cabível.
-5. Cite a fonte ao final de cada informação importante: *[nome_do_arquivo.pdf]*
-6. Se a informação não estiver nos documentos, diga claramente o que buscou e não encontrou.
-7. NUNCA invente ou use conhecimento externo. Apenas os documentos abaixo.
-8. Seja completo mas objetivo. Prefira listas a parágrafos longos.
-${hasEmbedding ? '(Busca semântica ativa — os trechos foram selecionados por relevância de significado)' : '(Busca por palavras-chave ativa)'}
+   - "promoção" = "ascensão", "progressão funcional"
+3. Estruture a resposta: use **negrito**, listas com "-", tabelas quando cabível.
+4. Cite a fonte ao final de cada informação: *[nome_arquivo.pdf]*
+5. Se a informação for parcial, diga o que encontrou e o que não encontrou.
+6. Só diga "não encontrei" após examinar todos os trechos.
+7. NUNCA use conhecimento externo. Apenas os documentos abaixo.
 
 DOCUMENTOS — ${S.subject}:
 ${context}`;
 
-    // Histórico (últimas 3 trocas = 6 mensagens)
     const history = S.msgs.slice(-6).map(m => ({
       role: m.role === 'user' ? 'user' : 'assistant',
       content: m.content
@@ -766,10 +549,8 @@ ${context}`;
     removeTyping(tid);
     prog.classList.remove('show');
     addMsg('ai', answer, sources);
-
     if (sources.length) document.getElementById('srcBtn').style.display = 'inline-flex';
-    S.msgs.push({ role: 'user', content: q }, { role: 'ai', content: answer });
-
+    S.msgs.push({ role:'user', content:q }, { role:'ai', content:answer });
   } catch(e) {
     removeTyping(tid);
     prog.classList.remove('show');
@@ -777,148 +558,121 @@ ${context}`;
     toast(e.message, 'err');
   }
   S.busy = false; updateSendBtn();
-};
+}
 
-// ════════════════════════════════════════════════════════════════════════════
-// CHAT RENDERING
-// ════════════════════════════════════════════════════════════════════════════
-function addMsg(role, text, sources = []) {
-  const c   = document.getElementById('msgs');
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+function addMsg(role, text, sources=[]) {
+  const c = document.getElementById('msgs');
+  const d = document.createElement('div');
+  d.className = `msg ${role}`;
   const srcHTML = sources.length
-    ? `<div class="src-row">${[...new Set(sources.map(s => s.docName))]
-        .map(d => `<span class="src-pill" onclick="showSrc('${d.replace(/'/g,"\\'")}')">📄 ${d}</span>`)
-        .join('')}</div>`
-    : '';
-  div.innerHTML = `
-    <div class="av">${role === 'ai' ? '🧠' : '👤'}</div>
+    ? `<div class="src-row">${[...new Set(sources.map(s=>s.docName))].map(dn=>
+        `<span class="src-pill" onclick="showSrc('${dn.replace(/'/g,"\\'")}')">📄 ${dn}</span>`
+      ).join('')}</div>` : '';
+  d.innerHTML = `<div class="av">${role==='ai'?'🧠':'👤'}</div>
     <div class="msg-body"><div class="bubble">${renderMD(text)}</div>${srcHTML}</div>`;
-  c.appendChild(div);
-  c.scrollTop = c.scrollHeight;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
 }
 
 function addTyping() {
-  const c = document.getElementById('msgs'), id = 'ty' + Date.now();
-  const d = document.createElement('div');
-  d.className = 'msg ai'; d.id = id;
-  d.innerHTML = `<div class="av">🧠</div><div class="msg-body"><div class="bubble"><div class="typing-wrap"><div class="dot-ani"></div><div class="dot-ani"></div><div class="dot-ani"></div></div></div></div>`;
-  c.appendChild(d); c.scrollTop = c.scrollHeight;
-  return id;
+  const c=document.getElementById('msgs'), id='ty'+Date.now(), d=document.createElement('div');
+  d.className='msg ai'; d.id=id;
+  d.innerHTML=`<div class="av">🧠</div><div class="msg-body"><div class="bubble"><div class="typing-wrap"><div class="dot-ani"></div><div class="dot-ani"></div><div class="dot-ani"></div></div></div></div>`;
+  c.appendChild(d); c.scrollTop=c.scrollHeight; return id;
 }
 function removeTyping(id) { document.getElementById(id)?.remove(); }
 function clearChat() {
-  const c = document.getElementById('msgs');
-  [...c.children].forEach(ch => { if (ch.id !== 'welcome') ch.remove(); });
-  document.getElementById('welcome').style.display = 'flex';
+  const c=document.getElementById('msgs');
+  [...c.children].forEach(ch=>{ if(ch.id!=='welcome') ch.remove(); });
+  document.getElementById('welcome').style.display='flex';
 }
 
-// Markdown renderer completo
 function renderMD(t) {
-  t = t.replace(/```[\w]*\n?([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-  t = t.replace(/^#{3}\s+(.+)$/gm, '<h3>$1</h3>');
-  t = t.replace(/^#{2}\s+(.+)$/gm, '<h2>$1</h2>');
-  t = t.replace(/^#{1}\s+(.+)$/gm, '<h2>$1</h2>');
-  t = t.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  t = t.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
-  t = t.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
-  t = t.replace(/^---+$/gm, '<hr>');
-  // Tables
-  const tableRx = /(\|.+\|\n)((?:\|[-:]+)+\|\n)((?:\|.+\|\n?)+)/g;
-  t = t.replace(tableRx, (_, head, sep, body) => {
-    const hCells = head.trim().slice(1,-1).split('|').map(c=>`<th>${c.trim()}</th>`).join('');
-    const rows   = body.trim().split('\n').map(row => {
-      const cells = row.slice(1,-1).split('|').map(c=>`<td>${c.trim()}</td>`).join('');
+  t=t.replace(/```[\w]*\n?([\s\S]*?)```/g,'<pre><code>$1</code></pre>');
+  t=t.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  t=t.replace(/^#{3}\s+(.+)$/gm,'<h3>$1</h3>');
+  t=t.replace(/^#{2}\s+(.+)$/gm,'<h2>$1</h2>');
+  t=t.replace(/^#{1}\s+(.+)$/gm,'<h2>$1</h2>');
+  t=t.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/\*([^*\n]+?)\*/g,'<em>$1</em>');
+  t=t.replace(/^>\s+(.+)$/gm,'<blockquote>$1</blockquote>');
+  t=t.replace(/^---+$/gm,'<hr>');
+  const tableRx=/(\|.+\|\n)((?:\|[-: ]+)+\|\n)((?:\|.+\|\n?)+)/g;
+  t=t.replace(tableRx,(_,head,sep,body)=>{
+    const hc=head.trim().slice(1,-1).split('|').map(c=>`<th>${c.trim()}</th>`).join('');
+    const rows=body.trim().split('\n').map(row=>{
+      const cells=row.slice(1,-1).split('|').map(c=>`<td>${c.trim()}</td>`).join('');
       return `<tr>${cells}</tr>`;
     }).join('');
-    return `<table><thead><tr>${hCells}</tr></thead><tbody>${rows}</tbody></table>`;
+    return `<table><thead><tr>${hc}</tr></thead><tbody>${rows}</tbody></table>`;
   });
-  // Lists
-  t = t.replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>');
-  t = t.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
-  t = t.replace(/(<li>[\s\S]+?)(?=\n[^<]|\n\n|$)/g, '<ul>$1</ul>');
-  // Paragraphs
-  const blocks = t.split(/\n\n+/);
-  t = blocks.map(b => {
-    const trimmed = b.trim();
-    if (!trimmed) return '';
-    if (/^<(h[123]|ul|ol|pre|table|blockquote|hr)/.test(trimmed)) return trimmed;
-    return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
+  t=t.replace(/^[\-\*]\s+(.+)$/gm,'<li>$1</li>');
+  t=t.replace(/^\d+\.\s+(.+)$/gm,'<li>$1</li>');
+  t=t.replace(/(<li>.*?)(\n(?!<li>)|$)/gs,'<ul>$1</ul>');
+  const blocks=t.split(/\n\n+/);
+  t=blocks.map(b=>{
+    const tr=b.trim(); if(!tr) return '';
+    if(/^<(h[123]|ul|ol|pre|table|blockquote|hr)/.test(tr)) return tr;
+    return `<p>${tr.replace(/\n/g,'<br>')}</p>`;
   }).filter(Boolean).join('\n');
   return t;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // SOURCE PANEL
-// ════════════════════════════════════════════════════════════════════════════
-window.toggleSrcPanel = function() {
-  const p = document.getElementById('srcPanel');
-  p.classList.toggle('open');
-  if (p.classList.contains('open')) renderSrcPanel(S.lastSources);
-};
-window.showSrc = function(docName) {
-  const filtered = S.lastSources.filter(s => s.docName === docName);
+// ═══════════════════════════════════════════════════════════════
+function toggleSrcPanel() {
+  const p=document.getElementById('srcPanel'); p.classList.toggle('open');
+  if(p.classList.contains('open')) renderSrcPanel(S.lastSources);
+}
+function showSrc(docName) {
+  const f=S.lastSources.filter(s=>s.docName===docName);
   document.getElementById('srcPanel').classList.add('open');
-  renderSrcPanel(filtered.length ? filtered : S.lastSources);
-};
+  renderSrcPanel(f.length?f:S.lastSources);
+}
 function renderSrcPanel(sources) {
   document.getElementById('spBody').innerHTML = sources.length
-    ? sources.map(s => {
-        const sem  = s.semScore  ? `Semântico: ${(s.semScore*100).toFixed(0)}%` : '';
-        const bm   = s.bm25Score ? `BM25: ${s.bm25Score.toFixed(1)}` : '';
-        const rrf  = s.rrfScore  ? `RRF: ${s.rrfScore.toFixed(4)}` : '';
-        return `<div class="sp-chunk">
-          <div class="sp-file">📄 ${s.docName}</div>
-          <div class="sp-txt">${s.text.slice(0, 420)}${s.text.length > 420 ? '…' : ''}</div>
-          <div class="sp-scores">${[sem, bm, rrf].filter(Boolean).join(' · ')}</div>
-        </div>`;
-      }).join('')
-    : '<div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta para ver as fontes</p></div>';
+    ? sources.map(s=>`<div class="sp-chunk">
+        <div class="sp-file">📄 ${s.docName}</div>
+        <div class="sp-txt">${s.text.slice(0,420)}${s.text.length>420?'…':''}</div>
+        <div class="sp-score">BM25: ${s.bm25Score?.toFixed(2)||'—'} · RRF: ${s.rrfScore?.toFixed(4)||'—'}</div>
+      </div>`).join('')
+    : '<div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta</p></div>';
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// UI HELPERS
-// ════════════════════════════════════════════════════════════════════════════
-window.onKey  = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
-window.resize = (t) => { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 110) + 'px'; };
-function updateSendBtn() { document.getElementById('sendBtn').disabled = S.busy; }
-function updateStats() {
-  document.getElementById('stChunks').textContent = S.chunks.length;
-  document.getElementById('stPages').textContent  = S.docs.reduce((s, d) => s + d.pages, 0);
-  document.getElementById('sbStats').style.display = S.docs.length ? 'flex' : 'none';
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+function onKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+function resize(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,110)+'px';}
+function updateSendBtn(){document.getElementById('sendBtn').disabled=S.busy;}
+function updateStats(pages){
+  document.getElementById('stChunks').textContent=S.chunks.length;
+  document.getElementById('stPages').textContent=pages||'—';
+  document.getElementById('stMode').textContent= S.hasEmbeddings?'🧠 semântico':'🔍 BM25';
+  document.getElementById('sbStats').style.display=S.chunks.length?'flex':'none';
 }
-function updateStatus() {
-  const el = document.getElementById('gStatus');
-  if (!S.subject) {
-    el.className = 'badge idle';
-    el.innerHTML = '<span class="dot" style="background:var(--t2)"></span> Selecione um assunto';
-  } else if (S.busy) {
-    el.className = 'badge busy';
-    el.innerHTML = '<span class="dot" style="background:var(--warn)"></span> Carregando...';
-  } else {
-    el.className = 'badge ok';
-    el.innerHTML = `<span class="dot" style="background:var(--ok)"></span> 📚 ${S.subject}${S.embedReady ? ' · 🧠' : ''}`;
-  }
+function updateStatus(){
+  const el=document.getElementById('gStatus');
+  if(!S.subject){el.className='badge idle';el.innerHTML='<span class="dot" style="background:var(--t2)"></span> Selecione um assunto';}
+  else if(S.busy){el.className='badge busy';el.innerHTML='<span class="dot" style="background:var(--warn)"></span> Carregando...';}
+  else{el.className='badge ok';el.innerHTML=`<span class="dot" style="background:var(--ok)"></span> 📚 ${S.subject}`;}
 }
-function showLoader(txt, sub = '') {
-  document.getElementById('loaderTxt').textContent = txt;
-  document.getElementById('loaderSub').textContent = sub;
+function showLoader(txt,sub=''){
+  document.getElementById('loaderTxt').textContent=txt;
+  document.getElementById('loaderSub').textContent=sub;
   document.getElementById('loader').classList.add('open');
 }
-function hideLoader() { document.getElementById('loader').classList.remove('open'); }
-function setLoaderSub(s) { document.getElementById('loaderSub').textContent = s; }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-function toast(msg, type = 'info') {
-  const c = document.getElementById('toasts'), d = document.createElement('div');
-  d.className = `toast ${type}`;
-  d.innerHTML = `<span>${{ok:'✅',err:'❌',info:'ℹ️',warn:'⚠️'}[type]||'ℹ️'}</span> ${msg}`;
+function hideLoader(){document.getElementById('loader').classList.remove('open');}
+function toast(msg,type='info'){
+  const c=document.getElementById('toasts'),d=document.createElement('div');
+  d.className=`toast ${type}`;
+  d.innerHTML=`<span>${{ok:'✅',err:'❌',info:'ℹ️',warn:'⚠️'}[type]||'ℹ️'}</span> ${msg}`;
   c.appendChild(d);
-  setTimeout(() => {
-    d.style.opacity='0'; d.style.transform='translateX(44px)'; d.style.transition='all .28s';
-    setTimeout(() => d.remove(), 300);
-  }, 5000);
+  setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(44px)';d.style.transition='all .28s';setTimeout(()=>d.remove(),300);},5000);
 }
 </script>
 </body>
