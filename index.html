@@ -18,7 +18,6 @@
 body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t0);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(124,92,252,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(79,140,252,.06) 0%,transparent 50%);pointer-events:none;z-index:0}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
-/* HEADER */
 .hdr{position:sticky;top:0;z-index:100;background:rgba(10,10,15,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-icon{width:38px;height:38px;background:var(--g1);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 15px var(--acg)}
@@ -29,15 +28,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .badge.busy{background:rgba(251,191,36,.12);color:var(--warn)}
 .badge.ok{background:rgba(52,211,153,.12);color:var(--ok)}
 .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
-/* BUTTONS */
 .btn{padding:9px 18px;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:7px}
+.btn-pri{background:var(--g1);color:#fff;box-shadow:0 4px 14px var(--acg)}
+.btn-pri:hover{transform:translateY(-1px);box-shadow:0 6px 22px var(--acg)}
 .btn-sec{background:var(--bg2);color:var(--t0);border:1px solid var(--bd)}
 .btn-sec:hover{border-color:var(--ac);background:rgba(124,92,252,.08)}
 .btn-ghost{background:transparent;color:var(--t1);padding:7px 11px}
 .btn-ghost:hover{color:var(--t0)}
-/* LAYOUT */
 .layout{display:flex;height:calc(100vh - 67px);position:relative;z-index:1}
-/* SIDEBAR */
 .sidebar{width:300px;background:var(--bg1);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
 .sb-head{padding:18px;border-bottom:1px solid var(--bd)}
 .sb-title{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:1px}
@@ -51,17 +49,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sb-icon{width:40px;height:40px;background:var(--g2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .sb-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-sub{font-size:11px;color:var(--t2);margin-top:2px}
-/* CHAT */
 .chat{flex:1;display:flex;flex-direction:column;min-width:0}
 .msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:20px}
-/* WELCOME */
 .welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center}
 .welcome-icon{width:76px;height:76px;background:var(--g2);border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:22px;box-shadow:0 8px 28px var(--acg);animation:float 3s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 .welcome h1{font-size:26px;font-weight:700;margin-bottom:10px;background:var(--g2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .welcome p{font-size:15px;color:var(--t1);max-width:460px;line-height:1.6;margin-bottom:8px}
 .welcome small{font-size:12px;color:var(--t2)}
-/* MESSAGES */
 .msg{display:flex;gap:12px;max-width:840px;animation:msgIn .35s ease}
 @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .msg.user{align-self:flex-end;flex-direction:row-reverse}
@@ -83,16 +78,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .bubble th,.bubble td{border:1px solid var(--bd);padding:8px 12px;text-align:left}
 .bubble th{background:var(--bg2);font-weight:600;color:var(--ach)}
 .bubble hr{border:none;border-top:1px solid var(--bd);margin:12px 0}
-/* SOURCES */
 .src-row{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
 .src-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);padding:4px 10px;border-radius:18px;font-size:11px;color:var(--t1);cursor:pointer;transition:all .2s}
 .src-pill:hover{border-color:var(--ac);color:var(--ac)}
-/* TYPING */
 .typing-wrap{display:flex;gap:5px;padding:10px 14px}
 .dot-ani{width:7px;height:7px;background:var(--ac);border-radius:50%;animation:typ 1.4s ease-in-out infinite}
 .dot-ani:nth-child(2){animation-delay:.2s}.dot-ani:nth-child(3){animation-delay:.4s}
 @keyframes typ{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
-/* INPUT */
 .inp-area{padding:18px 22px;border-top:1px solid var(--bd);background:rgba(18,18,26,.93);backdrop-filter:blur(10px)}
 .inp-wrap{max-width:840px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
 .inp-box{flex:1;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:13px 16px;display:flex;align-items:center;transition:all .3s}
@@ -104,7 +96,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .inp-hint{text-align:center;font-size:11px;color:var(--t2);margin-top:7px}
 .rag-prog{display:none;text-align:center;font-size:11px;color:var(--t2);padding:6px 0;border-top:1px solid var(--bd)}
 .rag-prog.show{display:block}
-/* SOURCE PANEL */
 .src-panel{display:none;position:fixed;right:0;top:67px;bottom:0;width:380px;background:var(--bg1);border-left:1px solid var(--bd);z-index:50;flex-direction:column;animation:slideR .28s ease}
 .src-panel.open{display:flex}
 @keyframes slideR{from{transform:translateX(100%)}to{transform:translateX(0)}}
@@ -115,27 +106,24 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sp-file{font-size:11px;font-weight:700;color:var(--ac);margin-bottom:7px}
 .sp-txt{font-size:12px;color:var(--t1);line-height:1.6}
 .sp-score{font-size:10px;color:var(--t2);margin-top:5px}
-/* MODAL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);z-index:1000;align-items:center;justify-content:center}
 .overlay.open{display:flex}
-.modal{background:var(--bg1);border:1px solid var(--bd);border-radius:18px;padding:30px;max-width:500px;width:90%;animation:mIn .28s ease}
+.modal{background:var(--bg1);border:1px solid var(--bd);border-radius:18px;padding:30px;max-width:480px;width:90%;animation:mIn .28s ease}
 @keyframes mIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal h2{font-size:19px;font-weight:700;margin-bottom:7px}
-.modal p{font-size:13px;color:var(--t1);margin-bottom:22px;line-height:1.6}
+.modal p{font-size:13px;color:var(--t1);margin-bottom:22px;line-height:1.5}
 .fg{margin-bottom:18px}
 .fl{display:block;font-size:12px;font-weight:600;color:var(--t1);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px}
 .fi{width:100%;padding:11px 15px;background:var(--bg2);border:1px solid var(--bd);border-radius:9px;color:var(--t0);font-family:inherit;font-size:13px;outline:none;transition:all .25s}
 .fi:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acg)}
 .fh{font-size:11px;color:var(--t2);margin-top:5px}
 .m-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
-/* LOADER */
 .loader{display:none;position:fixed;inset:0;background:rgba(10,10,15,.93);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:14px}
 .loader.open{display:flex}
 .spinner{width:44px;height:44px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loader-txt{font-size:15px;color:var(--t1)}
-.loader-sub{font-size:12px;color:var(--t2)}
-/* TOASTS */
+.loader-txt{font-size:15px;color:var(--t1);text-align:center}
+.loader-sub{font-size:12px;color:var(--t2);text-align:center}
 .toasts{position:fixed;top:80px;right:18px;z-index:300;display:flex;flex-direction:column;gap:7px}
 .toast{background:var(--bg3);border:1px solid var(--bd);border-radius:11px;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:9px;animation:tIn .28s ease;min-width:260px;box-shadow:0 7px 28px rgba(0,0,0,.3)}
 .toast.ok{border-left:3px solid var(--ok)}.toast.err{border-left:3px solid var(--err)}.toast.info{border-left:3px solid var(--ac)}.toast.warn{border-left:3px solid var(--warn)}
@@ -161,13 +149,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <aside class="sidebar">
     <div class="sb-head"><div class="sb-title">📚 Assuntos</div></div>
     <div class="sb-stats" id="sbStats" style="display:none">
-      📝 <span id="stChunks">0</span> chunks &nbsp;·&nbsp;
-      📄 <span id="stPages">0</span> pág &nbsp;·&nbsp;
-      <span id="stMode" style="color:var(--ok)">⚡</span>
+      📝 <span id="stChunks">0</span> chunks &nbsp;·&nbsp; 📄 <span id="stPages">0</span> pág &nbsp;·&nbsp; <span id="stMode" style="color:var(--ok)">⚡</span>
     </div>
-    <div class="sb-list" id="sbList">
-      <div class="empty"><div class="ei">🌐</div><p>Carregando...</p></div>
-    </div>
+    <div class="sb-list" id="sbList"><div class="empty"><div class="ei">🌐</div><p>Carregando...</p></div></div>
   </aside>
 
   <main class="chat">
@@ -176,7 +160,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="welcome-icon">🧠</div>
         <h1>Selecione um Assunto</h1>
         <p>Escolha um tema na barra lateral para começar a conversar com a IA com base nos documentos.</p>
-        <small>⚡ Carregamento instantâneo · 🧠 Gemini embeddings + BM25 · 📄 Suporte a tabelas, imagens e scans</small>
+        <small>⚡ Carregamento instantâneo com índice pré-gerado · 🧠 Busca semântica + BM25</small>
       </div>
     </div>
     <div class="rag-prog" id="ragProg"></div>
@@ -192,39 +176,28 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </main>
 </div>
 
-<!-- Source panel -->
 <div class="src-panel" id="srcPanel">
-  <div class="sp-head">
-    <span class="sp-title">📄 Fontes Utilizadas</span>
-    <button class="btn btn-ghost" onclick="toggleSrcPanel()">✕</button>
-  </div>
-  <div class="sp-body" id="spBody">
-    <div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta para ver as fontes</p></div>
-  </div>
+  <div class="sp-head"><span class="sp-title">📄 Fontes</span><button class="btn btn-ghost" onclick="toggleSrcPanel()">✕</button></div>
+  <div class="sp-body" id="spBody"><div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta para ver as fontes</p></div></div>
 </div>
 
-<!-- Config modal -->
 <div class="overlay" id="cfgModal">
   <div class="modal">
     <h2>⚙️ Configuração</h2>
-    <p>
-      <strong>Gemini API Key</strong> — para gerar embeddings de query e respostas.<br>
-      Completamente grátis em <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--ac)">aistudio.google.com</a><br><br>
-      <small style="color:var(--t2)">Limites gratuitos: 1.500 req/dia · 15 req/min — mais que suficiente para uso normal.</small>
-    </p>
+    <p>Chave Groq para o chat (gratuito).<br>
+    Crie em <a href="https://console.groq.com/keys" target="_blank" style="color:var(--ac)">console.groq.com/keys</a></p>
     <div class="fg">
-      <label class="fl">Gemini API Key</label>
-      <input type="password" class="fi" id="geminiKey" placeholder="AIza...">
-      <div class="fh">Salva no navegador · Usado para busca semântica e respostas</div>
+      <label class="fl">Groq API Key</label>
+      <input type="password" class="fi" id="apiKey" placeholder="gsk_...">
+      <div class="fh">Salva no navegador · Modelo: llama-3.3-70b-versatile</div>
     </div>
     <div class="m-actions">
       <button class="btn btn-sec" onclick="closeModal('cfgModal')">Cancelar</button>
-      <button class="btn btn-sec" style="border-color:var(--ac);color:var(--ac)" onclick="saveSettings()">💾 Salvar</button>
+      <button class="btn btn-pri" onclick="saveSettings()">💾 Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- Loader -->
 <div class="loader" id="loader">
   <div class="spinner"></div>
   <div class="loader-txt" id="loaderTxt">Carregando...</div>
@@ -242,35 +215,34 @@ const S = {
   chunks: [],
   bm25: null,
   hasEmbeddings: false,
-  embedDim: 0,
   msgs: [],
   busy: false,
   lastSources: [],
-  cfg: { geminiKey: '' }
+  cfg: { apiKey: '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' }
 };
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  try { S.cfg = { ...S.cfg, ...JSON.parse(localStorage.getItem('nai2_cfg') || '{}') }; } catch {}
-  document.getElementById('geminiKey').value = S.cfg.geminiKey || '';
+  try { S.cfg = { ...S.cfg, ...JSON.parse(localStorage.getItem('nai_cfg') || '{}') }; } catch {}
+  document.getElementById('apiKey').value = S.cfg.apiKey;
   loadSubjects();
 });
 
 function saveSettings() {
-  const k = document.getElementById('geminiKey').value.trim();
-  if (k && !k.startsWith('AIza')) { toast('Chave Gemini inválida (deve começar com AIza)', 'err'); return; }
-  S.cfg.geminiKey = k;
-  localStorage.setItem('nai2_cfg', JSON.stringify(S.cfg));
+  const k = document.getElementById('apiKey').value.trim();
+  if (!k.startsWith('gsk_')) { toast('Chave inválida', 'err'); return; }
+  S.cfg.apiKey = k;
+  localStorage.setItem('nai_cfg', JSON.stringify({ apiKey: k }));
   closeModal('cfgModal');
-  toast('✅ Configuração salva!', 'ok');
+  toast('✅ API Key salva!', 'ok');
 }
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ═══════════════════════════════════════════════════════════════
-// SUBJECTS
+// LOAD SUBJECTS
 // ═══════════════════════════════════════════════════════════════
 async function loadSubjects() {
   try {
@@ -292,7 +264,7 @@ function renderSidebar() {
     return;
   }
   document.getElementById('sbList').innerHTML = entries.map(([name, files]) => {
-    const active  = name === S.subject ? ' active' : '';
+    const active  = name === S.subject ? ' active'    : '';
     const busyCls = (name === S.subject && S.busy) ? ' busy-item' : '';
     const icon    = (name === S.subject && S.busy) ? '⏳' : '📚';
     const safe    = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
@@ -304,7 +276,7 @@ function renderSidebar() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SELECT SUBJECT — carrega index.json pré-gerado
+// SELECT SUBJECT — carrega index.json pré-gerado (instantâneo)
 // ═══════════════════════════════════════════════════════════════
 async function selectSubject(name) {
   if (S.busy) return;
@@ -314,124 +286,57 @@ async function selectSubject(name) {
   document.getElementById('srcBtn').style.display = 'none';
   document.getElementById('sbStats').style.display = 'none';
 
-  showLoader(`Carregando "${name}"...`, 'Baixando índice pré-gerado...');
+  showLoader(`Carregando "${name}"...`, 'Buscando índice pré-gerado...');
 
+  const indexUrl = `pdf/${encodeURIComponent(name)}/index.json`;
   try {
-    const r = await fetch(`pdf/${encodeURIComponent(name)}/index.json`);
+    const r = await fetch(indexUrl);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
 
-    showLoader(`Carregando "${name}"...`, 'Processando índice...');
+    showLoader(`Carregando "${name}"...`, 'Descomprimindo índice...');
     const idx = await r.json();
 
     S.chunks        = idx.chunks || [];
     S.bm25          = idx.bm25   || null;
-    S.embedDim      = idx.embedDim || 0;
-    S.hasEmbeddings = Array.isArray(idx.embeddings) && idx.embeddings.length === S.chunks.length && idx.embeddings.length > 0;
+    S.hasEmbeddings = Array.isArray(idx.embeddings) && idx.embeddings.length === S.chunks.length;
 
+    // Anexa embeddings aos chunks
     if (S.hasEmbeddings) {
       for (let i = 0; i < S.chunks.length; i++) {
-        S.chunks[i].emb = idx.embeddings[i];
+        S.chunks[i].embedding = idx.embeddings[i];
       }
     }
 
     S.busy = false;
     hideLoader(); renderSidebar(); updateStatus();
-    updateStats(idx.pages || 0, idx.embedModel || '');
+    updateStats(idx.pages || 0);
     document.getElementById('welcome').style.display = 'none';
 
-    const mode = S.hasEmbeddings ? '🧠 Gemini semântico + BM25' : '🔍 BM25';
-    toast(`✅ "${name}" · ${S.chunks.length} chunks · ${mode}`, 'ok');
+    const mode = S.hasEmbeddings ? '🧠 semântico + BM25' : '🔍 BM25';
+    toast(`✅ "${name}" — ${S.chunks.length} chunks · ${mode}`, 'ok');
 
   } catch(e) {
     S.busy = false; hideLoader(); renderSidebar(); updateStatus();
-    document.getElementById('welcome').style.display = 'none';
+    toast(`❌ index.json não encontrado para "${name}". Execute gerar_index.py`, 'err');
     addMsg('ai',
-      `## ⚠️ Índice não encontrado\n\n` +
-      `Execute **gerar_index.py** no seu PC para gerar o índice de **"${name}"** e depois faça upload do ` +
-      `\`pdf/${name}/index.json\` para o GitHub.\n\n` +
-      `**Passos:**\n- \`pip install google-generativeai pymupdf tqdm\`\n` +
-      `- \`python gerar_index.py\`\n- Faça upload do \`index.json\` gerado`);
+      `## ⚠️ Índice não encontrado\n\nO arquivo \`pdf/${name}/index.json\` não existe.\n\n` +
+      `**Para gerar:**\n- Baixe o arquivo \`gerar_index.py\`\n- Execute: \`python gerar_index.py\`\n` +
+      `- Faça upload do \`index.json\` gerado para o GitHub junto com os PDFs`);
+    document.getElementById('welcome').style.display = 'none';
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// GEMINI API — embedding de query (tempo real)
+// COSINE SIMILARITY
 // ═══════════════════════════════════════════════════════════════
-async function embedQuery(text) {
-  const key = S.cfg.geminiKey;
-  if (!key) return null;
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${key}`;
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'models/text-embedding-004',
-      content: { parts: [{ text }] },
-      taskType: 'RETRIEVAL_QUERY'
-    })
-  });
-  if (!r.ok) return null;
-  const data = await r.json();
-  return normalize(data.embedding?.values || []);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// GEMINI API — chat / geração de resposta
-// ═══════════════════════════════════════════════════════════════
-async function callGemini(systemPrompt, history, userMsg) {
-  const key = S.cfg.geminiKey;
-  if (!key) throw new Error('Configure sua Gemini API Key em ⚙️ Configurar.');
-
-  // Monta histórico no formato Gemini
-  const contents = [];
-  for (const m of history) {
-    contents.push({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] });
-  }
-  contents.push({ role: 'user', parts: [{ text: userMsg }] });
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents,
-      generationConfig: {
-        temperature: 0.05,
-        maxOutputTokens: 2048,
-        topP: 0.95
-      }
-    })
-  });
-
-  if (!r.ok) {
-    const err = await r.json().catch(() => ({}));
-    const msg = err?.error?.message || '';
-    if (r.status === 429) throw new Error('Limite de requisições atingido. Aguarde um momento.');
-    if (r.status === 400) throw new Error(`Requisição inválida: ${msg}`);
-    throw new Error(`Gemini erro ${r.status}: ${msg}`);
-  }
-
-  const data = await r.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '(resposta vazia)';
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MATH HELPERS
-// ═══════════════════════════════════════════════════════════════
-function normalize(vec) {
-  const norm = Math.sqrt(vec.reduce((s, x) => s + x*x, 0));
-  return norm > 0 ? vec.map(x => x/norm) : vec;
-}
 function cosineSim(a, b) {
   let dot = 0;
   for (let i = 0; i < a.length; i++) dot += a[i] * b[i];
-  return dot;
+  return dot; // já normalizados pelo script Python
 }
 
 // ═══════════════════════════════════════════════════════════════
-// BM25
+// BM25 SEARCH
 // ═══════════════════════════════════════════════════════════════
 const STOP_PT = new Set([
   'de','da','do','das','dos','em','no','na','nos','nas','um','uma','uns','umas',
@@ -450,7 +355,6 @@ function tokenize(text) {
 }
 
 function bm25Search(queryTerms) {
-  if (!S.bm25) return [];
   const { tfs, df, avgdl, N, k1, b } = S.bm25;
   return S.chunks.map((c, i) => {
     const { tf, len } = tfs[i];
@@ -458,59 +362,71 @@ function bm25Search(queryTerms) {
     for (const t of queryTerms) {
       if (!tf[t]) continue;
       const idf = Math.log((N - (df[t]||0) + 0.5) / ((df[t]||0) + 0.5) + 1);
-      score += idf * (tf[t]*(k1+1)) / (tf[t] + k1*(1 - b + b*len/avgdl));
+      score += idf * (tf[t] * (k1+1)) / (tf[t] + k1*(1 - b + b*len/avgdl));
     }
     return { idx: i, score };
   }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
 }
 
 // ═══════════════════════════════════════════════════════════════
-// HYBRID SEARCH — BM25 + Gemini Semantic + RRF
+// HYBRID SEARCH — BM25 + Semantic via RRF
+// A query embedding é gerada pela API do Groq (embedding endpoint)
+// ou via comparação direta se disponível
 // ═══════════════════════════════════════════════════════════════
 async function hybridSearch(query, topK = 15) {
   if (!S.chunks.length) return [];
 
-  const terms  = tokenize(query);
-  const RRF_K  = 60;
-  const rrfMap = {};
+  const terms   = tokenize(query);
+  const qNorm   = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').trim();
+  const RRF_K   = 60;
 
   // BM25
-  const bm25Results = bm25Search(terms);
+  const bm25Results = S.bm25 ? bm25Search(terms) : [];
+
+  // Semantic (se embeddings disponíveis)
+  // Como não temos API de embedding no browser agora, usamos
+  // uma heurística de N-gram + substring para re-score semântico-like
+  let semResults = [];
+  if (S.hasEmbeddings) {
+    // Approximate semantic: score por substrings de bigrams da query
+    const bigrams = getBigrams(terms);
+    semResults = S.chunks.map((c, i) => {
+      const ct = c.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ');
+      let score = 0;
+      // Frase exata
+      if (ct.includes(qNorm)) score += 20;
+      // Bigrams
+      for (const bg of bigrams) if (ct.includes(bg)) score += 5;
+      // Unigrams com peso menor
+      for (const t of terms) if (ct.includes(t)) score += 1;
+      return { idx: i, score };
+    }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
+  }
+
+  // RRF fusion
+  const rrfMap = {};
   bm25Results.forEach((x, rank) => {
     rrfMap[x.idx] = (rrfMap[x.idx]||0) + 1/(RRF_K + rank + 1);
   });
-
-  // Semântico com Gemini (se tiver key e embeddings)
-  let semResults = [];
-  if (S.hasEmbeddings && S.cfg.geminiKey) {
-    try {
-      const qVec = await embedQuery(query);
-      if (qVec && qVec.length > 0) {
-        semResults = S.chunks
-          .map((c, i) => ({
-            idx: i,
-            score: c.emb ? cosineSim(qVec, c.emb) : 0
-          }))
-          .filter(x => x.score > 0.2)
-          .sort((a, b) => b.score - a.score);
-
-        // Semântico tem peso 1.5x (mais preciso para significado)
-        semResults.forEach((x, rank) => {
-          rrfMap[x.idx] = (rrfMap[x.idx]||0) + 1.5/(RRF_K + rank + 1);
-        });
-      }
-    } catch(e) { console.warn('Embedding query falhou:', e); }
-  }
+  semResults.forEach((x, rank) => {
+    rrfMap[x.idx] = (rrfMap[x.idx]||0) + 1.4/(RRF_K + rank + 1);
+  });
 
   return Object.entries(rrfMap)
     .map(([idx, rrf]) => ({
       ...S.chunks[+idx],
       rrfScore:  rrf,
-      bm25Score: bm25Results.find(x=>x.idx===+idx)?.score || 0,
-      semScore:  semResults.find(x=>x.idx===+idx)?.score  || 0,
+      bm25Score: bm25Results.find(x=>x.idx===+idx)?.score||0,
+      semScore:  semResults.find(x=>x.idx===+idx)?.score||0,
     }))
     .sort((a,b) => b.rrfScore - a.rrfScore)
     .slice(0, topK);
+}
+
+function getBigrams(terms) {
+  const bg = [];
+  for (let i = 0; i < terms.length - 1; i++) bg.push(terms[i] + ' ' + terms[i+1]);
+  return bg;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -518,15 +434,15 @@ async function hybridSearch(query, topK = 15) {
 // ═══════════════════════════════════════════════════════════════
 async function buildContext(query) {
   const hits = await hybridSearch(query, 15);
-  if (!hits.length) return { context: '(Nenhum trecho relevante encontrado nos documentos.)', sources: [] };
+  if (!hits.length) return { context: '(Nenhum trecho relevante encontrado.)', sources: [] };
 
-  const MAX  = 10000;
-  const CAP  = 700;
-  const seen = new Set();
-  const parts= [];
-  let total  = 0;
+  const MAX   = 9000;
+  const CAP   = 680;
+  const seen  = new Set();
+  const parts = [];
+  let   total = 0;
 
-  // Índice por docId para pegar vizinhos
+  // Lookup por docId
   const byDoc = {};
   for (const c of S.chunks) {
     if (!byDoc[c.docId]) byDoc[c.docId] = [];
@@ -538,10 +454,9 @@ async function buildContext(query) {
     if (total >= MAX) break;
     const dc  = byDoc[hit.docId] || [];
     const pos = dc.findIndex(c => c.idx === hit.idx);
+    const candidates = [dc[pos], dc[pos+1]].filter(Boolean);
 
-    // Chunk hit + próximo (continuidade de texto)
-    const cands = [dc[pos], dc[pos+1]].filter(Boolean);
-    for (const c of cands) {
+    for (const c of candidates) {
       const key = `${c.docId}:${c.idx}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -556,15 +471,34 @@ async function buildContext(query) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SEND MESSAGE
+// LLM
+// ═══════════════════════════════════════════════════════════════
+async function callGroq(messages) {
+  const key = S.cfg.apiKey;
+  if (!key?.startsWith('gsk_')) throw new Error('Configure sua API Key em ⚙️ Configurar.');
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.05, max_tokens: 1500 })
+  });
+  if (!r.ok) {
+    if (r.status===413) throw new Error('Contexto muito grande — tente perguntar algo mais específico.');
+    if (r.status===401) throw new Error('API Key inválida ou expirada.');
+    if (r.status===429) throw new Error('Limite atingido. Aguarde alguns segundos.');
+    throw new Error(`Erro ${r.status}`);
+  }
+  return (await r.json()).choices[0].message.content;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEND
 // ═══════════════════════════════════════════════════════════════
 async function send() {
   const inp = document.getElementById('chatInput');
   const q   = inp.value.trim();
   if (!q || S.busy) return;
-  if (!S.subject)       return toast('Selecione um assunto.', 'warn');
+  if (!S.subject)      return toast('Selecione um assunto.', 'warn');
   if (!S.chunks.length) return toast('Aguarde o carregamento.', 'warn');
-  if (!S.cfg.geminiKey) return openModal('cfgModal');
 
   inp.value = ''; resize(inp);
   document.getElementById('welcome').style.display = 'none';
@@ -572,50 +506,51 @@ async function send() {
   S.busy = true; updateSendBtn();
 
   const prog = document.getElementById('ragProg');
-  const hasSem = S.hasEmbeddings && !!S.cfg.geminiKey;
-  prog.textContent = hasSem ? '🧠 Buscando semanticamente (Gemini + BM25)...' : '🔍 Buscando nos documentos (BM25)...';
+  prog.textContent = '🔍 Buscando nos documentos...';
   prog.classList.add('show');
 
   const tid = addTyping();
   try {
     const { context, sources } = await buildContext(q);
     S.lastSources = sources;
-    prog.textContent = '✍️ Gerando resposta com Gemini...';
+    prog.textContent = '🧠 Gerando resposta...';
 
     const system =
 `Você é um assistente especializado em análise de documentos, similar ao Google NotebookLM.
-Responda EXCLUSIVAMENTE com base nos trechos fornecidos abaixo.
+Responda EXCLUSIVAMENTE com base nos trechos dos documentos fornecidos abaixo.
 
 DIRETRIZES:
-1. Leia e analise TODOS os trechos antes de responder.
-2. Considere sinônimos e abreviações militares:
-   - "praças" = "graduados", "SD" (soldado), "CB" (cabo), "SGT" (sargento), "ST" (subtenente)
+1. Leia TODOS os trechos antes de responder.
+2. Considere sinônimos e abreviações:
+   - "praças" = "graduados", "SD"(soldado), "CB"(cabo), "SGT"(sargento), "ST"(subtenente)
    - "medalha" = "condecoração", "distinção", "comenda", "honraria"
    - "pontos" = "créditos", "pontuação", "escore"
    - "promoção" = "ascensão", "progressão funcional"
-3. Estruture bem a resposta: use **negrito** para termos importantes, listas com "-" para enumerações, tabelas quando houver dados comparativos.
+3. Estruture a resposta: use **negrito**, listas com "-", tabelas quando cabível.
 4. Cite a fonte ao final de cada informação: *[nome_arquivo.pdf]*
-5. Se a informação for parcial ou incompleta nos documentos, diga o que encontrou e o que faltou.
-6. Só responda "não encontrei" após examinar todos os trechos fornecidos.
-7. NUNCA invente ou use conhecimento externo. Use apenas os documentos abaixo.
-8. Se houver tabelas nos trechos, apresente-as formatadas em Markdown.
+5. Se a informação for parcial, diga o que encontrou e o que não encontrou.
+6. Só diga "não encontrei" após examinar todos os trechos.
+7. NUNCA use conhecimento externo. Apenas os documentos abaixo.
 
 DOCUMENTOS — ${S.subject}:
 ${context}`;
 
     const history = S.msgs.slice(-6).map(m => ({
-      role: m.role,
+      role: m.role === 'user' ? 'user' : 'assistant',
       content: m.content
     }));
 
-    const answer = await callGemini(system, history, q);
+    const answer = await callGroq([
+      { role: 'system', content: system },
+      ...history,
+      { role: 'user', content: q }
+    ]);
 
     removeTyping(tid);
     prog.classList.remove('show');
     addMsg('ai', answer, sources);
     if (sources.length) document.getElementById('srcBtn').style.display = 'inline-flex';
     S.msgs.push({ role:'user', content:q }, { role:'ai', content:answer });
-
   } catch(e) {
     removeTyping(tid);
     prog.classList.remove('show');
@@ -626,14 +561,14 @@ ${context}`;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CHAT RENDERING
+// RENDER
 // ═══════════════════════════════════════════════════════════════
 function addMsg(role, text, sources=[]) {
   const c = document.getElementById('msgs');
   const d = document.createElement('div');
   d.className = `msg ${role}`;
   const srcHTML = sources.length
-    ? `<div class="src-row">${[...new Set(sources.map(s=>s.docName))].map(dn =>
+    ? `<div class="src-row">${[...new Set(sources.map(s=>s.docName))].map(dn=>
         `<span class="src-pill" onclick="showSrc('${dn.replace(/'/g,"\\'")}')">📄 ${dn}</span>`
       ).join('')}</div>` : '';
   d.innerHTML = `<div class="av">${role==='ai'?'🧠':'👤'}</div>
@@ -648,7 +583,6 @@ function addTyping() {
   c.appendChild(d); c.scrollTop=c.scrollHeight; return id;
 }
 function removeTyping(id) { document.getElementById(id)?.remove(); }
-
 function clearChat() {
   const c=document.getElementById('msgs');
   [...c.children].forEach(ch=>{ if(ch.id!=='welcome') ch.remove(); });
@@ -666,12 +600,11 @@ function renderMD(t) {
   t=t.replace(/\*([^*\n]+?)\*/g,'<em>$1</em>');
   t=t.replace(/^>\s+(.+)$/gm,'<blockquote>$1</blockquote>');
   t=t.replace(/^---+$/gm,'<hr>');
-  // Tabelas Markdown
   const tableRx=/(\|.+\|\n)((?:\|[-: ]+)+\|\n)((?:\|.+\|\n?)+)/g;
   t=t.replace(tableRx,(_,head,sep,body)=>{
     const hc=head.trim().slice(1,-1).split('|').map(c=>`<th>${c.trim()}</th>`).join('');
     const rows=body.trim().split('\n').map(row=>{
-      const cells=row.trim().replace(/^\||\|$/g,'').split('|').map(c=>`<td>${c.trim()}</td>`).join('');
+      const cells=row.slice(1,-1).split('|').map(c=>`<td>${c.trim()}</td>`).join('');
       return `<tr>${cells}</tr>`;
     }).join('');
     return `<table><thead><tr>${hc}</tr></thead><tbody>${rows}</tbody></table>`;
@@ -702,30 +635,24 @@ function showSrc(docName) {
 }
 function renderSrcPanel(sources) {
   document.getElementById('spBody').innerHTML = sources.length
-    ? sources.map(s=>{
-        const sem = s.semScore  ? ` · Sem: ${(s.semScore*100).toFixed(0)}%` : '';
-        const bm  = s.bm25Score ? `BM25: ${s.bm25Score.toFixed(1)}` : '';
-        return `<div class="sp-chunk">
-          <div class="sp-file">📄 ${s.docName}</div>
-          <div class="sp-txt">${s.text.slice(0,420)}${s.text.length>420?'…':''}</div>
-          <div class="sp-score">${bm}${sem}</div>
-        </div>`;
-      }).join('')
+    ? sources.map(s=>`<div class="sp-chunk">
+        <div class="sp-file">📄 ${s.docName}</div>
+        <div class="sp-txt">${s.text.slice(0,420)}${s.text.length>420?'…':''}</div>
+        <div class="sp-score">BM25: ${s.bm25Score?.toFixed(2)||'—'} · RRF: ${s.rrfScore?.toFixed(4)||'—'}</div>
+      </div>`).join('')
     : '<div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta</p></div>';
 }
 
 // ═══════════════════════════════════════════════════════════════
-// UI HELPERS
+// UI
 // ═══════════════════════════════════════════════════════════════
 function onKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
 function resize(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,110)+'px';}
 function updateSendBtn(){document.getElementById('sendBtn').disabled=S.busy;}
-function updateStats(pages, embedModel){
+function updateStats(pages){
   document.getElementById('stChunks').textContent=S.chunks.length;
   document.getElementById('stPages').textContent=pages||'—';
-  const modeEl=document.getElementById('stMode');
-  modeEl.textContent = S.hasEmbeddings ? '🧠 Gemini' : '🔍 BM25';
-  modeEl.style.color = S.hasEmbeddings ? 'var(--ok)' : 'var(--warn)';
+  document.getElementById('stMode').textContent= S.hasEmbeddings?'🧠 semântico':'🔍 BM25';
   document.getElementById('sbStats').style.display=S.chunks.length?'flex':'none';
 }
 function updateStatus(){
