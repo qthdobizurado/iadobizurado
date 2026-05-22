@@ -1,679 +1,259 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NotebookAI</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-:root {
-  --bg0:#0a0a0f;--bg1:#12121a;--bg2:#1a1a2e;--bg3:#16162a;
-  --ac:#7c5cfc;--ach:#9478ff;--acg:rgba(124,92,252,0.25);
-  --t0:#e8e8f0;--t1:#9898b0;--t2:#5a5a78;--bd:#2a2a40;
-  --ok:#34d399;--warn:#fbbf24;--err:#f87171;
-  --g1:linear-gradient(135deg,#7c5cfc,#4f8cff);
-  --g2:linear-gradient(135deg,#7c5cfc,#c084fc);
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t0);min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(124,92,252,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(79,140,252,.06) 0%,transparent 50%);pointer-events:none;z-index:0}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
-.hdr{position:sticky;top:0;z-index:100;background:rgba(10,10,15,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-icon{width:38px;height:38px;background:var(--g1);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 15px var(--acg)}
-.logo-text{font-size:21px;font-weight:700;background:var(--g2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hdr-right{display:flex;align-items:center;gap:10px}
-.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
-.badge.idle{background:rgba(90,90,120,.15);color:var(--t2)}
-.badge.busy{background:rgba(251,191,36,.12);color:var(--warn)}
-.badge.ok{background:rgba(52,211,153,.12);color:var(--ok)}
-.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
-.btn{padding:9px 18px;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:7px}
-.btn-pri{background:var(--g1);color:#fff;box-shadow:0 4px 14px var(--acg)}
-.btn-pri:hover{transform:translateY(-1px);box-shadow:0 6px 22px var(--acg)}
-.btn-sec{background:var(--bg2);color:var(--t0);border:1px solid var(--bd)}
-.btn-sec:hover{border-color:var(--ac);background:rgba(124,92,252,.08)}
-.btn-ghost{background:transparent;color:var(--t1);padding:7px 11px}
-.btn-ghost:hover{color:var(--t0)}
-.layout{display:flex;height:calc(100vh - 67px);position:relative;z-index:1}
-.sidebar{width:300px;background:var(--bg1);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0}
-.sb-head{padding:18px;border-bottom:1px solid var(--bd)}
-.sb-title{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:1px}
-.sb-stats{display:flex;flex-wrap:wrap;gap:8px;padding:10px 18px;border-bottom:1px solid var(--bd);font-size:11px;color:var(--t2)}
-.sb-stats span{color:var(--t1);font-weight:600}
-.sb-list{flex:1;overflow-y:auto;padding:10px}
-.sb-item{display:flex;align-items:center;gap:11px;padding:13px;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:5px;border:1px solid transparent}
-.sb-item:hover{background:var(--bg2);border-color:var(--bd)}
-.sb-item.active{background:rgba(124,92,252,.1);border-color:var(--ac)}
-.sb-item.busy-item{opacity:.55;pointer-events:none}
-.sb-icon{width:40px;height:40px;background:var(--g2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
-.sb-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-sub{font-size:11px;color:var(--t2);margin-top:2px}
-.chat{flex:1;display:flex;flex-direction:column;min-width:0}
-.msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:20px}
-.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center}
-.welcome-icon{width:76px;height:76px;background:var(--g2);border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:22px;box-shadow:0 8px 28px var(--acg);animation:float 3s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
-.welcome h1{font-size:26px;font-weight:700;margin-bottom:10px;background:var(--g2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.welcome p{font-size:15px;color:var(--t1);max-width:460px;line-height:1.6;margin-bottom:8px}
-.welcome small{font-size:12px;color:var(--t2)}
-.msg{display:flex;gap:12px;max-width:840px;animation:msgIn .35s ease}
-@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.msg.user{align-self:flex-end;flex-direction:row-reverse}
-.av{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.msg.ai .av{background:var(--g1);box-shadow:0 2px 9px var(--acg)}
-.msg.user .av{background:var(--bg2);border:1px solid var(--bd)}
-.msg-body{flex:1}
-.bubble{padding:15px 19px;border-radius:15px;font-size:14px;line-height:1.78}
-.msg.ai .bubble{background:var(--bg3);border:1px solid var(--bd);border-top-left-radius:3px}
-.msg.user .bubble{background:var(--ac);color:#fff;border-top-right-radius:3px}
-.bubble p{margin-bottom:9px}.bubble p:last-child{margin-bottom:0}
-.bubble strong{color:var(--ach)}.msg.user .bubble strong{color:#fff}
-.bubble ul,.bubble ol{margin:7px 0;padding-left:20px}.bubble li{margin-bottom:5px}
-.bubble h2,.bubble h3{margin:14px 0 6px;color:var(--t0)}.bubble h2{font-size:16px}.bubble h3{font-size:14px;color:var(--ach)}
-.bubble code{background:var(--bg0);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--ach)}
-.bubble pre{background:var(--bg0);padding:13px;border-radius:9px;overflow-x:auto;margin:9px 0;border:1px solid var(--bd)}
-.bubble blockquote{border-left:3px solid var(--ac);padding-left:13px;color:var(--t1);margin:9px 0;font-style:italic}
-.bubble table{border-collapse:collapse;margin:9px 0;width:100%;font-size:13px}
-.bubble th,.bubble td{border:1px solid var(--bd);padding:8px 12px;text-align:left}
-.bubble th{background:var(--bg2);font-weight:600;color:var(--ach)}
-.bubble hr{border:none;border-top:1px solid var(--bd);margin:12px 0}
-.src-row{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
-.src-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);padding:4px 10px;border-radius:18px;font-size:11px;color:var(--t1);cursor:pointer;transition:all .2s}
-.src-pill:hover{border-color:var(--ac);color:var(--ac)}
-.typing-wrap{display:flex;gap:5px;padding:10px 14px}
-.dot-ani{width:7px;height:7px;background:var(--ac);border-radius:50%;animation:typ 1.4s ease-in-out infinite}
-.dot-ani:nth-child(2){animation-delay:.2s}.dot-ani:nth-child(3){animation-delay:.4s}
-@keyframes typ{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
-.inp-area{padding:18px 22px;border-top:1px solid var(--bd);background:rgba(18,18,26,.93);backdrop-filter:blur(10px)}
-.inp-wrap{max-width:840px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
-.inp-box{flex:1;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:13px 16px;display:flex;align-items:center;transition:all .3s}
-.inp-box:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px var(--acg)}
-.inp-box textarea{flex:1;background:none;border:none;color:var(--t0);font-family:inherit;font-size:14px;resize:none;outline:none;max-height:110px;line-height:1.5}
-.inp-box textarea::placeholder{color:var(--t2)}
-.send{width:46px;height:46px;background:var(--g1);border:none;border-radius:13px;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 4px 14px var(--acg);flex-shrink:0}
-.send:hover{transform:scale(1.06)}.send:disabled{opacity:.45;cursor:not-allowed;transform:none}
-.inp-hint{text-align:center;font-size:11px;color:var(--t2);margin-top:7px}
-.rag-prog{display:none;text-align:center;font-size:11px;color:var(--t2);padding:6px 0;border-top:1px solid var(--bd)}
-.rag-prog.show{display:block}
-.src-panel{display:none;position:fixed;right:0;top:67px;bottom:0;width:380px;background:var(--bg1);border-left:1px solid var(--bd);z-index:50;flex-direction:column;animation:slideR .28s ease}
-.src-panel.open{display:flex}
-@keyframes slideR{from{transform:translateX(100%)}to{transform:translateX(0)}}
-.sp-head{padding:18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
-.sp-title{font-size:15px;font-weight:600}
-.sp-body{flex:1;overflow-y:auto;padding:16px}
-.sp-chunk{background:var(--bg3);border:1px solid var(--bd);border-radius:11px;padding:14px;margin-bottom:10px}
-.sp-file{font-size:11px;font-weight:700;color:var(--ac);margin-bottom:7px}
-.sp-txt{font-size:12px;color:var(--t1);line-height:1.6}
-.sp-score{font-size:10px;color:var(--t2);margin-top:5px}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);z-index:1000;align-items:center;justify-content:center}
-.overlay.open{display:flex}
-.modal{background:var(--bg1);border:1px solid var(--bd);border-radius:18px;padding:30px;max-width:480px;width:90%;animation:mIn .28s ease}
-@keyframes mIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.modal h2{font-size:19px;font-weight:700;margin-bottom:7px}
-.modal p{font-size:13px;color:var(--t1);margin-bottom:22px;line-height:1.5}
-.fg{margin-bottom:18px}
-.fl{display:block;font-size:12px;font-weight:600;color:var(--t1);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px}
-.fi{width:100%;padding:11px 15px;background:var(--bg2);border:1px solid var(--bd);border-radius:9px;color:var(--t0);font-family:inherit;font-size:13px;outline:none;transition:all .25s}
-.fi:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acg)}
-.fh{font-size:11px;color:var(--t2);margin-top:5px}
-.m-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
-.loader{display:none;position:fixed;inset:0;background:rgba(10,10,15,.93);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:14px}
-.loader.open{display:flex}
-.spinner{width:44px;height:44px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loader-txt{font-size:15px;color:var(--t1);text-align:center}
-.loader-sub{font-size:12px;color:var(--t2);text-align:center}
-.toasts{position:fixed;top:80px;right:18px;z-index:300;display:flex;flex-direction:column;gap:7px}
-.toast{background:var(--bg3);border:1px solid var(--bd);border-radius:11px;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:9px;animation:tIn .28s ease;min-width:260px;box-shadow:0 7px 28px rgba(0,0,0,.3)}
-.toast.ok{border-left:3px solid var(--ok)}.toast.err{border-left:3px solid var(--err)}.toast.info{border-left:3px solid var(--ac)}.toast.warn{border-left:3px solid var(--warn)}
-@keyframes tIn{from{opacity:0;transform:translateX(44px)}to{opacity:1;transform:translateX(0)}}
-.empty{text-align:center;padding:36px 18px;color:var(--t2)}.empty .ei{font-size:36px;margin-bottom:10px}.empty p{font-size:13px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tira Dúvidas CBMGO - NotebookLM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header .subtitle {
+            font-size: 1.1rem;
+            color: #e94560;
+            font-weight: 500;
+        }
+
+        header .logo {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 10px;
+        }
+
+        .btn-card {
+            background: linear-gradient(145deg, #1e3a5f, #162447);
+            border: 2px solid #e94560;
+            border-radius: 12px;
+            padding: 25px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            display: block;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(233, 69, 96, 0.4);
+            background: linear-gradient(145deg, #244875, #1a2f5a);
+        }
+
+        .btn-card:active {
+            transform: translateY(-2px);
+        }
+
+        .btn-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .btn-card .label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .btn-card .hint {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #aaa;
+            font-style: italic;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            margin-top: 30px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: #e94560;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .buttons-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-card {
+                padding: 20px 15px;
+            }
+        }
+
+        /* Animação de entrada */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-card {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .btn-card:nth-child(1) { animation-delay: 0.1s; }
+        .btn-card:nth-child(2) { animation-delay: 0.2s; }
+        .btn-card:nth-child(3) { animation-delay: 0.3s; }
+        .btn-card:nth-child(4) { animation-delay: 0.4s; }
+        .btn-card:nth-child(5) { animation-delay: 0.5s; }
+        .btn-card:nth-child(6) { animation-delay: 0.6s; }
+        .btn-card:nth-child(7) { animation-delay: 0.7s; }
+        .btn-card:nth-child(8) { animation-delay: 0.8s; }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <div class="logo">🚒</div>
+            <h1>TIRA DÚVIDAS CBMGO</h1>
+            <div class="subtitle">NotebookLM</div>
+        </header>
 
-<header class="hdr">
-  <div class="logo">
-    <div class="logo-icon">📖</div>
-    <span class="logo-text">NotebookAI</span>
-  </div>
-  <div class="hdr-right">
-    <span id="gStatus" class="badge idle"><span class="dot" style="background:var(--t2)"></span> Selecione um assunto</span>
-    <button class="btn btn-ghost" id="srcBtn" onclick="toggleSrcPanel()" style="display:none">📄 Fontes</button>
-    <button class="btn btn-sec" onclick="openModal('cfgModal')">⚙️ Configurar</button>
-  </div>
-</header>
+        <main class="buttons-grid">
+            <!-- Botão 1 -->
+            <a href="https://notebooklm.google.com/notebook/d06033d3-1415-4249-919f-804c2678c867" 
+               target="_blank" 
+               class="btn-card">
+                <span class="icon">📜</span>
+                <span class="label">Leis, Decretos e Portarias</span>
+                <span class="hint">Clique para acessar</span>
+            </a>
 
-<div class="layout">
-  <aside class="sidebar">
-    <div class="sb-head"><div class="sb-title">📚 Assuntos</div></div>
-    <div class="sb-stats" id="sbStats" style="display:none">
-      📝 <span id="stChunks">0</span> chunks &nbsp;·&nbsp; 📄 <span id="stPages">0</span> pág &nbsp;·&nbsp; <span id="stMode" style="color:var(--ok)">⚡</span>
+            <!-- Botão 2 -->
+            <a href="https://notebooklm.google.com/notebook/b37e23c5-a02b-4a1d-bbbe-bc7156391089" 
+               target="_blank" 
+               class="btn-card">
+                <span class="icon">📘</span>
+                <span class="label">Manuais de Bombeiros</span>
+                <span class="hint">Clique para acessar</span>
+            </a>
+
+            <!-- Botão 3 -->
+            <a href="https://notebooklm.google.com/notebook/bd4e4e77-a743-463c-b27d-49edcee98715" 
+               target="_blank" 
+               class="btn-card">
+                <span class="icon">🛡️</span>
+                <span class="label">Normatização de Ações de Defesa Civil</span>
+                <span class="hint">Clique para acessar</span>
+            </a>
+
+            <!-- Botão 4 -->
+            <a href="https://notebooklm.google.com/notebook/f4a88e3f-e24a-4668-84b8-370684086492" 
+               target="_blank" 
+               class="btn-card">
+                <span class="icon">📋</span>
+                <span class="label">Normas Administrativas</span>
+                <span class="hint">Clique para acessar</span>
+            </a>
+
+            <!-- Botão 5 -->
+            <a href="https://notebooklm.google.com/notebook/b986ff28-616b-4b6a-b757-9b9e10a83673" 
+               target="_blank" 
+               class="btn-card">
+                <span class="icon">🎓</span>
+                <span class="label">Normas de Ensino e Instrução</span>
+                <span class="hint">Clique para acessar</span>
+            </a>
+
+            <!-- Botão 6 -->
+            <a href="https://notebooklm.google.com/notebook/f59b3770-0c51-45b0-9387-0cfb6ab9d02e" 
+               target="_blank" 
+               class="btn-card">
+                <span class="icon">⚙️</span>
+                <span class="label">Normas Operacionais</span>
+                <span class="hint">Clique para acessar</span>
+            </a>
+
+            <!-- Botão 7 -->
+            <a href="https://notebooklm.google.com/notebook/b1f18ba0-0ca8-4fc6-b3d7-6403a434ed8a" 
+               target="_blank" 
+               class="btn-card">
+                <span class="icon">🔧</span>
+                <span class="label">Normas Técnicas</span>
+                <span class="hint">Clique para acessar</span>
+            </a>
+
+            <!-- Botão 8 -->
+            <a href="https://notebooklm.google.com/notebook/1f30ac7f-b0a6-42b9-adb0-6321b466f795" 
+               target="_blank" 
+               class="btn-card">
+                <span class="icon">✅</span>
+                <span class="label">Procedimento Operacional Padrão – POP</span>
+                <span class="hint">Clique para acessar</span>
+            </a>
+        </main>
+
     </div>
-    <div class="sb-list" id="sbList"><div class="empty"><div class="ei">🌐</div><p>Carregando...</p></div></div>
-  </aside>
 
-  <main class="chat">
-    <div class="msgs" id="msgs">
-      <div class="welcome" id="welcome">
-        <div class="welcome-icon">🧠</div>
-        <h1>Selecione um Assunto</h1>
-        <p>Escolha um tema na barra lateral para começar a conversar com a IA com base nos documentos.</p>
-        <small>⚡ Carregamento instantâneo com índice pré-gerado · 🧠 Busca semântica + BM25</small>
-      </div>
-    </div>
-    <div class="rag-prog" id="ragProg"></div>
-    <div class="inp-area">
-      <div class="inp-wrap">
-        <div class="inp-box">
-          <textarea id="chatInput" rows="1" placeholder="Pergunte sobre os documentos..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
-        </div>
-        <button class="send" id="sendBtn" onclick="send()">➤</button>
-      </div>
-      <div class="inp-hint">Enter para enviar · Shift+Enter para nova linha</div>
-    </div>
-  </main>
-</div>
-
-<div class="src-panel" id="srcPanel">
-  <div class="sp-head"><span class="sp-title">📄 Fontes</span><button class="btn btn-ghost" onclick="toggleSrcPanel()">✕</button></div>
-  <div class="sp-body" id="spBody"><div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta para ver as fontes</p></div></div>
-</div>
-
-<div class="overlay" id="cfgModal">
-  <div class="modal">
-    <h2>⚙️ Configuração</h2>
-    <p>Chave Groq para o chat (gratuito).<br>
-    Crie em <a href="https://console.groq.com/keys" target="_blank" style="color:var(--ac)">console.groq.com/keys</a></p>
-    <div class="fg">
-      <label class="fl">Groq API Key</label>
-      <input type="password" class="fi" id="apiKey" placeholder="gsk_...">
-      <div class="fh">Salva no navegador · Modelo: llama-3.3-70b-versatile</div>
-    </div>
-    <div class="m-actions">
-      <button class="btn btn-sec" onclick="closeModal('cfgModal')">Cancelar</button>
-      <button class="btn btn-pri" onclick="saveSettings()">💾 Salvar</button>
-    </div>
-  </div>
-</div>
-
-<div class="loader" id="loader">
-  <div class="spinner"></div>
-  <div class="loader-txt" id="loaderTxt">Carregando...</div>
-  <div class="loader-sub" id="loaderSub"></div>
-</div>
-<div class="toasts" id="toasts"></div>
-
-<script>
-// ═══════════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════════
-const S = {
-  subject: null,
-  subjectsMap: {},
-  chunks: [],
-  bm25: null,
-  hasEmbeddings: false,
-  msgs: [],
-  busy: false,
-  lastSources: [],
-  cfg: { apiKey: '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' }
-};
-
-// ═══════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  try { S.cfg = { ...S.cfg, ...JSON.parse(localStorage.getItem('nai_cfg') || '{}') }; } catch {}
-  document.getElementById('apiKey').value = S.cfg.apiKey;
-  loadSubjects();
-});
-
-function saveSettings() {
-  const k = document.getElementById('apiKey').value.trim();
-  if (!k.startsWith('gsk_')) { toast('Chave inválida', 'err'); return; }
-  S.cfg.apiKey = k;
-  localStorage.setItem('nai_cfg', JSON.stringify({ apiKey: k }));
-  closeModal('cfgModal');
-  toast('✅ API Key salva!', 'ok');
-}
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-// ═══════════════════════════════════════════════════════════════
-// LOAD SUBJECTS
-// ═══════════════════════════════════════════════════════════════
-async function loadSubjects() {
-  try {
-    const r = await fetch('pdf/subjects.json');
-    if (!r.ok) throw new Error();
-    S.subjectsMap = await r.json();
-    renderSidebar();
-  } catch {
-    document.getElementById('sbList').innerHTML =
-      '<div class="empty"><div class="ei">⚠️</div><p>Crie <code>pdf/subjects.json</code></p></div>';
-  }
-}
-
-function renderSidebar() {
-  const entries = Object.entries(S.subjectsMap);
-  if (!entries.length) {
-    document.getElementById('sbList').innerHTML =
-      '<div class="empty"><div class="ei">📭</div><p>Nenhum assunto.</p></div>';
-    return;
-  }
-  document.getElementById('sbList').innerHTML = entries.map(([name, files]) => {
-    const active  = name === S.subject ? ' active'    : '';
-    const busyCls = (name === S.subject && S.busy) ? ' busy-item' : '';
-    const icon    = (name === S.subject && S.busy) ? '⏳' : '📚';
-    const safe    = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<div class="sb-item${active}${busyCls}" onclick="selectSubject('${safe}')">
-      <div class="sb-icon">${icon}</div>
-      <div><div class="sb-name">${name}</div><div class="sb-sub">${files.length} doc(s)</div></div>
-    </div>`;
-  }).join('');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SELECT SUBJECT — carrega index.json pré-gerado (instantâneo)
-// ═══════════════════════════════════════════════════════════════
-async function selectSubject(name) {
-  if (S.busy) return;
-  S.subject = name; S.chunks = []; S.msgs = []; S.lastSources = []; S.bm25 = null;
-  S.busy = true;
-  clearChat(); renderSidebar(); updateStatus();
-  document.getElementById('srcBtn').style.display = 'none';
-  document.getElementById('sbStats').style.display = 'none';
-
-  showLoader(`Carregando "${name}"...`, 'Buscando índice pré-gerado...');
-
-  const indexUrl = `pdf/${encodeURIComponent(name)}/index.json`;
-  try {
-    const r = await fetch(indexUrl);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-
-    showLoader(`Carregando "${name}"...`, 'Descomprimindo índice...');
-    const idx = await r.json();
-
-    S.chunks        = idx.chunks || [];
-    S.bm25          = idx.bm25   || null;
-    S.hasEmbeddings = Array.isArray(idx.embeddings) && idx.embeddings.length === S.chunks.length;
-
-    // Anexa embeddings aos chunks
-    if (S.hasEmbeddings) {
-      for (let i = 0; i < S.chunks.length; i++) {
-        S.chunks[i].embedding = idx.embeddings[i];
-      }
-    }
-
-    S.busy = false;
-    hideLoader(); renderSidebar(); updateStatus();
-    updateStats(idx.pages || 0);
-    document.getElementById('welcome').style.display = 'none';
-
-    const mode = S.hasEmbeddings ? '🧠 semântico + BM25' : '🔍 BM25';
-    toast(`✅ "${name}" — ${S.chunks.length} chunks · ${mode}`, 'ok');
-
-  } catch(e) {
-    S.busy = false; hideLoader(); renderSidebar(); updateStatus();
-    toast(`❌ index.json não encontrado para "${name}". Execute gerar_index.py`, 'err');
-    addMsg('ai',
-      `## ⚠️ Índice não encontrado\n\nO arquivo \`pdf/${name}/index.json\` não existe.\n\n` +
-      `**Para gerar:**\n- Baixe o arquivo \`gerar_index.py\`\n- Execute: \`python gerar_index.py\`\n` +
-      `- Faça upload do \`index.json\` gerado para o GitHub junto com os PDFs`);
-    document.getElementById('welcome').style.display = 'none';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// COSINE SIMILARITY
-// ═══════════════════════════════════════════════════════════════
-function cosineSim(a, b) {
-  let dot = 0;
-  for (let i = 0; i < a.length; i++) dot += a[i] * b[i];
-  return dot; // já normalizados pelo script Python
-}
-
-// ═══════════════════════════════════════════════════════════════
-// BM25 SEARCH
-// ═══════════════════════════════════════════════════════════════
-const STOP_PT = new Set([
-  'de','da','do','das','dos','em','no','na','nos','nas','um','uma','uns','umas',
-  'o','a','os','as','e','é','ao','aos','às','por','para','com','que','se','não',
-  'ou','mas','seu','sua','seus','suas','mais','como','já','também','isso','este',
-  'esta','esse','essa','aqui','lá','foi','ser','ter','tem','há','são','pelo',
-  'pela','pelos','pelas','sobre','entre','após','ante','até','sem','sob','num',
-]);
-
-function tokenize(text) {
-  return text.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9\s]/g,' ')
-    .split(/\s+/)
-    .filter(t => t.length > 2 && !STOP_PT.has(t));
-}
-
-function bm25Search(queryTerms) {
-  const { tfs, df, avgdl, N, k1, b } = S.bm25;
-  return S.chunks.map((c, i) => {
-    const { tf, len } = tfs[i];
-    let score = 0;
-    for (const t of queryTerms) {
-      if (!tf[t]) continue;
-      const idf = Math.log((N - (df[t]||0) + 0.5) / ((df[t]||0) + 0.5) + 1);
-      score += idf * (tf[t] * (k1+1)) / (tf[t] + k1*(1 - b + b*len/avgdl));
-    }
-    return { idx: i, score };
-  }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// HYBRID SEARCH — BM25 + Semantic via RRF
-// A query embedding é gerada pela API do Groq (embedding endpoint)
-// ou via comparação direta se disponível
-// ═══════════════════════════════════════════════════════════════
-async function hybridSearch(query, topK = 15) {
-  if (!S.chunks.length) return [];
-
-  const terms   = tokenize(query);
-  const qNorm   = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').trim();
-  const RRF_K   = 60;
-
-  // BM25
-  const bm25Results = S.bm25 ? bm25Search(terms) : [];
-
-  // Semantic (se embeddings disponíveis)
-  // Como não temos API de embedding no browser agora, usamos
-  // uma heurística de N-gram + substring para re-score semântico-like
-  let semResults = [];
-  if (S.hasEmbeddings) {
-    // Approximate semantic: score por substrings de bigrams da query
-    const bigrams = getBigrams(terms);
-    semResults = S.chunks.map((c, i) => {
-      const ct = c.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ');
-      let score = 0;
-      // Frase exata
-      if (ct.includes(qNorm)) score += 20;
-      // Bigrams
-      for (const bg of bigrams) if (ct.includes(bg)) score += 5;
-      // Unigrams com peso menor
-      for (const t of terms) if (ct.includes(t)) score += 1;
-      return { idx: i, score };
-    }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
-  }
-
-  // RRF fusion
-  const rrfMap = {};
-  bm25Results.forEach((x, rank) => {
-    rrfMap[x.idx] = (rrfMap[x.idx]||0) + 1/(RRF_K + rank + 1);
-  });
-  semResults.forEach((x, rank) => {
-    rrfMap[x.idx] = (rrfMap[x.idx]||0) + 1.4/(RRF_K + rank + 1);
-  });
-
-  return Object.entries(rrfMap)
-    .map(([idx, rrf]) => ({
-      ...S.chunks[+idx],
-      rrfScore:  rrf,
-      bm25Score: bm25Results.find(x=>x.idx===+idx)?.score||0,
-      semScore:  semResults.find(x=>x.idx===+idx)?.score||0,
-    }))
-    .sort((a,b) => b.rrfScore - a.rrfScore)
-    .slice(0, topK);
-}
-
-function getBigrams(terms) {
-  const bg = [];
-  for (let i = 0; i < terms.length - 1; i++) bg.push(terms[i] + ' ' + terms[i+1]);
-  return bg;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// BUILD CONTEXT
-// ═══════════════════════════════════════════════════════════════
-async function buildContext(query) {
-  const hits = await hybridSearch(query, 15);
-  if (!hits.length) return { context: '(Nenhum trecho relevante encontrado.)', sources: [] };
-
-  const MAX   = 9000;
-  const CAP   = 680;
-  const seen  = new Set();
-  const parts = [];
-  let   total = 0;
-
-  // Lookup por docId
-  const byDoc = {};
-  for (const c of S.chunks) {
-    if (!byDoc[c.docId]) byDoc[c.docId] = [];
-    byDoc[c.docId].push(c);
-  }
-  for (const arr of Object.values(byDoc)) arr.sort((a,b)=>a.idx-b.idx);
-
-  for (const hit of hits) {
-    if (total >= MAX) break;
-    const dc  = byDoc[hit.docId] || [];
-    const pos = dc.findIndex(c => c.idx === hit.idx);
-    const candidates = [dc[pos], dc[pos+1]].filter(Boolean);
-
-    for (const c of candidates) {
-      const key = `${c.docId}:${c.idx}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const txt = c.text.length > CAP ? c.text.slice(0, CAP)+'…' : c.text;
-      parts.push(`📄 **${c.docName}**\n${txt}`);
-      total += txt.length;
-      if (total >= MAX) break;
-    }
-  }
-
-  return { context: parts.join('\n\n---\n\n'), sources: hits.slice(0, 8) };
-}
-
-// ═══════════════════════════════════════════════════════════════
-// LLM
-// ═══════════════════════════════════════════════════════════════
-async function callGroq(messages) {
-  const key = S.cfg.apiKey;
-  if (!key?.startsWith('gsk_')) throw new Error('Configure sua API Key em ⚙️ Configurar.');
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.05, max_tokens: 1500 })
-  });
-  if (!r.ok) {
-    if (r.status===413) throw new Error('Contexto muito grande — tente perguntar algo mais específico.');
-    if (r.status===401) throw new Error('API Key inválida ou expirada.');
-    if (r.status===429) throw new Error('Limite atingido. Aguarde alguns segundos.');
-    throw new Error(`Erro ${r.status}`);
-  }
-  return (await r.json()).choices[0].message.content;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SEND
-// ═══════════════════════════════════════════════════════════════
-async function send() {
-  const inp = document.getElementById('chatInput');
-  const q   = inp.value.trim();
-  if (!q || S.busy) return;
-  if (!S.subject)      return toast('Selecione um assunto.', 'warn');
-  if (!S.chunks.length) return toast('Aguarde o carregamento.', 'warn');
-
-  inp.value = ''; resize(inp);
-  document.getElementById('welcome').style.display = 'none';
-  addMsg('user', q);
-  S.busy = true; updateSendBtn();
-
-  const prog = document.getElementById('ragProg');
-  prog.textContent = '🔍 Buscando nos documentos...';
-  prog.classList.add('show');
-
-  const tid = addTyping();
-  try {
-    const { context, sources } = await buildContext(q);
-    S.lastSources = sources;
-    prog.textContent = '🧠 Gerando resposta...';
-
-    const system =
-`Você é um assistente especializado em análise de documentos, similar ao Google NotebookLM.
-Responda EXCLUSIVAMENTE com base nos trechos dos documentos fornecidos abaixo.
-
-DIRETRIZES:
-1. Leia TODOS os trechos antes de responder.
-2. Considere sinônimos e abreviações:
-   - "praças" = "graduados", "SD"(soldado), "CB"(cabo), "SGT"(sargento), "ST"(subtenente)
-   - "medalha" = "condecoração", "distinção", "comenda", "honraria"
-   - "pontos" = "créditos", "pontuação", "escore"
-   - "promoção" = "ascensão", "progressão funcional"
-3. Estruture a resposta: use **negrito**, listas com "-", tabelas quando cabível.
-4. Cite a fonte ao final de cada informação: *[nome_arquivo.pdf]*
-5. Se a informação for parcial, diga o que encontrou e o que não encontrou.
-6. Só diga "não encontrei" após examinar todos os trechos.
-7. NUNCA use conhecimento externo. Apenas os documentos abaixo.
-
-DOCUMENTOS — ${S.subject}:
-${context}`;
-
-    const history = S.msgs.slice(-6).map(m => ({
-      role: m.role === 'user' ? 'user' : 'assistant',
-      content: m.content
-    }));
-
-    const answer = await callGroq([
-      { role: 'system', content: system },
-      ...history,
-      { role: 'user', content: q }
-    ]);
-
-    removeTyping(tid);
-    prog.classList.remove('show');
-    addMsg('ai', answer, sources);
-    if (sources.length) document.getElementById('srcBtn').style.display = 'inline-flex';
-    S.msgs.push({ role:'user', content:q }, { role:'ai', content:answer });
-  } catch(e) {
-    removeTyping(tid);
-    prog.classList.remove('show');
-    addMsg('ai', `❌ **Erro:** ${e.message}`);
-    toast(e.message, 'err');
-  }
-  S.busy = false; updateSendBtn();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════════
-function addMsg(role, text, sources=[]) {
-  const c = document.getElementById('msgs');
-  const d = document.createElement('div');
-  d.className = `msg ${role}`;
-  const srcHTML = sources.length
-    ? `<div class="src-row">${[...new Set(sources.map(s=>s.docName))].map(dn=>
-        `<span class="src-pill" onclick="showSrc('${dn.replace(/'/g,"\\'")}')">📄 ${dn}</span>`
-      ).join('')}</div>` : '';
-  d.innerHTML = `<div class="av">${role==='ai'?'🧠':'👤'}</div>
-    <div class="msg-body"><div class="bubble">${renderMD(text)}</div>${srcHTML}</div>`;
-  c.appendChild(d); c.scrollTop = c.scrollHeight;
-}
-
-function addTyping() {
-  const c=document.getElementById('msgs'), id='ty'+Date.now(), d=document.createElement('div');
-  d.className='msg ai'; d.id=id;
-  d.innerHTML=`<div class="av">🧠</div><div class="msg-body"><div class="bubble"><div class="typing-wrap"><div class="dot-ani"></div><div class="dot-ani"></div><div class="dot-ani"></div></div></div></div>`;
-  c.appendChild(d); c.scrollTop=c.scrollHeight; return id;
-}
-function removeTyping(id) { document.getElementById(id)?.remove(); }
-function clearChat() {
-  const c=document.getElementById('msgs');
-  [...c.children].forEach(ch=>{ if(ch.id!=='welcome') ch.remove(); });
-  document.getElementById('welcome').style.display='flex';
-}
-
-function renderMD(t) {
-  t=t.replace(/```[\w]*\n?([\s\S]*?)```/g,'<pre><code>$1</code></pre>');
-  t=t.replace(/`([^`\n]+)`/g,'<code>$1</code>');
-  t=t.replace(/^#{3}\s+(.+)$/gm,'<h3>$1</h3>');
-  t=t.replace(/^#{2}\s+(.+)$/gm,'<h2>$1</h2>');
-  t=t.replace(/^#{1}\s+(.+)$/gm,'<h2>$1</h2>');
-  t=t.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
-  t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-  t=t.replace(/\*([^*\n]+?)\*/g,'<em>$1</em>');
-  t=t.replace(/^>\s+(.+)$/gm,'<blockquote>$1</blockquote>');
-  t=t.replace(/^---+$/gm,'<hr>');
-  const tableRx=/(\|.+\|\n)((?:\|[-: ]+)+\|\n)((?:\|.+\|\n?)+)/g;
-  t=t.replace(tableRx,(_,head,sep,body)=>{
-    const hc=head.trim().slice(1,-1).split('|').map(c=>`<th>${c.trim()}</th>`).join('');
-    const rows=body.trim().split('\n').map(row=>{
-      const cells=row.slice(1,-1).split('|').map(c=>`<td>${c.trim()}</td>`).join('');
-      return `<tr>${cells}</tr>`;
-    }).join('');
-    return `<table><thead><tr>${hc}</tr></thead><tbody>${rows}</tbody></table>`;
-  });
-  t=t.replace(/^[\-\*]\s+(.+)$/gm,'<li>$1</li>');
-  t=t.replace(/^\d+\.\s+(.+)$/gm,'<li>$1</li>');
-  t=t.replace(/(<li>.*?)(\n(?!<li>)|$)/gs,'<ul>$1</ul>');
-  const blocks=t.split(/\n\n+/);
-  t=blocks.map(b=>{
-    const tr=b.trim(); if(!tr) return '';
-    if(/^<(h[123]|ul|ol|pre|table|blockquote|hr)/.test(tr)) return tr;
-    return `<p>${tr.replace(/\n/g,'<br>')}</p>`;
-  }).filter(Boolean).join('\n');
-  return t;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SOURCE PANEL
-// ═══════════════════════════════════════════════════════════════
-function toggleSrcPanel() {
-  const p=document.getElementById('srcPanel'); p.classList.toggle('open');
-  if(p.classList.contains('open')) renderSrcPanel(S.lastSources);
-}
-function showSrc(docName) {
-  const f=S.lastSources.filter(s=>s.docName===docName);
-  document.getElementById('srcPanel').classList.add('open');
-  renderSrcPanel(f.length?f:S.lastSources);
-}
-function renderSrcPanel(sources) {
-  document.getElementById('spBody').innerHTML = sources.length
-    ? sources.map(s=>`<div class="sp-chunk">
-        <div class="sp-file">📄 ${s.docName}</div>
-        <div class="sp-txt">${s.text.slice(0,420)}${s.text.length>420?'…':''}</div>
-        <div class="sp-score">BM25: ${s.bm25Score?.toFixed(2)||'—'} · RRF: ${s.rrfScore?.toFixed(4)||'—'}</div>
-      </div>`).join('')
-    : '<div class="empty"><div class="ei">🔎</div><p>Faça uma pergunta</p></div>';
-}
-
-// ═══════════════════════════════════════════════════════════════
-// UI
-// ═══════════════════════════════════════════════════════════════
-function onKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
-function resize(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,110)+'px';}
-function updateSendBtn(){document.getElementById('sendBtn').disabled=S.busy;}
-function updateStats(pages){
-  document.getElementById('stChunks').textContent=S.chunks.length;
-  document.getElementById('stPages').textContent=pages||'—';
-  document.getElementById('stMode').textContent= S.hasEmbeddings?'🧠 semântico':'🔍 BM25';
-  document.getElementById('sbStats').style.display=S.chunks.length?'flex':'none';
-}
-function updateStatus(){
-  const el=document.getElementById('gStatus');
-  if(!S.subject){el.className='badge idle';el.innerHTML='<span class="dot" style="background:var(--t2)"></span> Selecione um assunto';}
-  else if(S.busy){el.className='badge busy';el.innerHTML='<span class="dot" style="background:var(--warn)"></span> Carregando...';}
-  else{el.className='badge ok';el.innerHTML=`<span class="dot" style="background:var(--ok)"></span> 📚 ${S.subject}`;}
-}
-function showLoader(txt,sub=''){
-  document.getElementById('loaderTxt').textContent=txt;
-  document.getElementById('loaderSub').textContent=sub;
-  document.getElementById('loader').classList.add('open');
-}
-function hideLoader(){document.getElementById('loader').classList.remove('open');}
-function toast(msg,type='info'){
-  const c=document.getElementById('toasts'),d=document.createElement('div');
-  d.className=`toast ${type}`;
-  d.innerHTML=`<span>${{ok:'✅',err:'❌',info:'ℹ️',warn:'⚠️'}[type]||'ℹ️'}</span> ${msg}`;
-  c.appendChild(d);
-  setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(44px)';d.style.transition='all .28s';setTimeout(()=>d.remove(),300);},5000);
-}
-</script>
+    <script>
+        // Efeito visual adicional ao clicar
+        document.querySelectorAll('.btn-card').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+    </script>
 </body>
 </html>
